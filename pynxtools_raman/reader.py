@@ -26,12 +26,12 @@ DEFAULT_HEADER = {"sep": "\t", "skip": 0}
 
 CONVERT_DICT = {
     "unit": "@units",
-    "Detector": "DETECTOR[detector_DU970BV]",
+    "Detector": "detector_TYPE[detector_DU970BV]",  #"Detector": "detector_TYPE[detector_DU970BV]", sollte auch passen mit "Detector": "DETECTOR[detector_DU970BV]",
     "source_532nmlaser": "SOURCE[source_532nmlaser]",
-    "beam_532nmlaser": "BEAM[beam_532nmlaser]",
+    "beam_532nmlaser": "beam_TYPE[beam_532nmlaser]",
     "Data": "DATA[data]",
     "Instrument": "INSTRUMENT[instrument]",
-    "Sample": "SAMPLE[sample]",
+    "Sample": "SAMPLE[sample_PET_or_PS]",
     "User": "USER[user]",
     "spectrum_data_y": "DATA[data]/spectrum_data_y",
     "spectrum_data_x": "DATA[data]/spectrum_data_x",
@@ -44,6 +44,9 @@ CONVERT_DICT = {
 CONFIG_KEYS = [
     "colnames",
     "filename",
+    "filename_image1",
+    "filename_image2",
+    "filename_reference",
     "plot_name_y",
     "plot_name_x",
     "sep",
@@ -142,12 +145,8 @@ def populate_header_dict(file_paths):
 
 def populate_template_dict(header, template):
     """The template dictionary is then populated according to the content of header dictionary."""
-
-    if "calibration_filename" in header:
-        calibration = load_as_pandas_array(header["calibration_filename"], header)
-        for k in calibration:
-            header[f"calibration_{k}"] = calibration[k]
-
+    print(header, "<--------- header")
+    print(header.keys(), "<--------- header")
     eln_data_dict = flatten_and_replace(
         FlattenSettings(
             dic=header,
@@ -156,7 +155,6 @@ def populate_template_dict(header, template):
             ignore_keys=CONFIG_KEYS,
         )
     )
-
 
     template.update(eln_data_dict)
 
@@ -233,8 +231,6 @@ class RamanReader(BaseReader):
         laser_wavelength = header["Instrument"][light_source_name]["incident_wavelength"]["value"]
 
         def transform_nm_to_wavenumber(lambda_laser,lambda_measurement):
-            print(lambda_measurement)
-            print(lambda_laser)
             return -(1E7/lambda_measurement - 1E7/lambda_laser)
 
         measured_wavelengths = whole_data["wavelength"].to_numpy()
@@ -243,15 +239,17 @@ class RamanReader(BaseReader):
         data_x_Raman = transform_nm_to_wavenumber(laser_wavelength*np.ones(len(measured_wavelengths)), measured_wavelengths)
         whole_data['DATA[data]/spectrum_data_x_Raman'] = data_x_Raman
 
-
-
+        header["Data"]["unit_y"]
 
         labels = header_labels(header)
 
-        header["spectrum_data_y"] = data_array(whole_data, data_index=1)
-        header["spectrum_data_x"] = data_array(whole_data, data_index=0)
-        header["DATA[data]/spectrum_data_x_Raman"] = data_array(whole_data, data_index=2)
+        def add_data_to_header(data_set, data_column_index, name):
+            header[str(name)] = data_array(data_set, data_column_index)
 
+
+        add_data_to_header(whole_data, 0, "spectrum_data_x")
+        add_data_to_header(whole_data, 1, "spectrum_data_y")
+        add_data_to_header(whole_data, 2, "DATA[data]/spectrum_data_x_Raman")
 
 
         if "atom_types" not in header["Sample"]:
@@ -282,10 +280,13 @@ class RamanReader(BaseReader):
         header, labels = RamanReader.populate_header_dict_with_datasets(
             file_paths
         )
-
+        print(header)
         # The template dictionary is filled
         template = populate_template_dict(header, template)
 
+
+        def populate_data_entry(entry_name,file_name, column_x, column_y):
+            print("lol")
 
         template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x_Raman/@units"] = "1/cm"
 
@@ -293,7 +294,7 @@ class RamanReader(BaseReader):
         template[f"/ENTRY[entry]/DATA[data]/@axes"] = f"spectrum_data_x_Raman"
 
         template[f"/ENTRY[entry]/DATA[data]/spectrum_data_y/@units"] = header["Data"]["unit_y"]
-        template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x/@units"] = header["Data"]["unit_x"]
+        #template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x/@units"] = header["Data"]["unit_x"]
         template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x/@long_name"] = header["plot_name_x"]
         template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x_Raman/@long_name"] = f"Raman Shift"
         template[f"/ENTRY[entry]/DATA[data]/spectrum_data_y/@long_name"] = header["plot_name_y"]

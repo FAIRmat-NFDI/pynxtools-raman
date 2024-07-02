@@ -69,9 +69,9 @@ Instrument:
       - 1600
       - 200
     gain_setting: 1.0
-    sensor_temperatur:
-      value: -56
-      unit: celsius
+    #sensor_temperatur: #move to NXsensor
+    #  value: -56
+    #  unit: celsius
   source_532nmlaser:
     source_type: laser #DPSS
     power:
@@ -97,10 +97,13 @@ Instrument:
     wavelength: 
       value: 596.989 ##Spectral Center [rel. 1/cm]: 2042.739
       unit: nm
+#Sample_SiWafer:
+#  atom_types: Si
+#  chemical_formula: Si
+#  sample_name: Silicon Wafer
 Sample:
-  atom_types: Si
-  chemical_formula: Si
-  sample_name: Silicon Wafer
+  sample_name: CD cover (probably PS or PET)
+  atom_types: C
 User:
   address: Lennestr. 5, 04318 Leipzig
   affiliation: Universität Leipzig
@@ -109,10 +112,13 @@ User:
 experiment_description: Raman spectrum of commercial silicon wafer
 experiment_type: Raman spectroscopy
 raman_experiment_type: non-resonant Raman spectroscopy
-filename: Si-wafer-Raman-Spectrum-1_CSV.csv
+filename_reference: Si-wafer-Raman-Spectrum-1.csv
+filename: PS-or-PET-Raman-Spectrum-2.csv
+filename_image1: 1_Export_File.png
+filename_image2: 2_Export_File.png
 plot_name_x: Wavelength
 plot_name_y: Raman Intensity
-title: Silicon Wafer
+title: Plastic from a compact disc (CD) cover
 colnames:
 - wavelength
 - CCD_cts

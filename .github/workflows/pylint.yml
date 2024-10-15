@@ -22,10 +22,10 @@ jobs:
           uv pip install --system -r dev-requirements.txt
       - name: ruff
         run: |
-          ruff pynxtools_raman tests
+          ruff check src/pynxtools_raman tests
       - name: ruff formatting
         run: |
-          ruff format --check pynxtools_raman tests
+          ruff format --check src/pynxtools_raman tests
       - name: mypy
         run: |
-          mypy pynxtools_raman tests
+          mypy src/pynxtools_raman tests

@@ -22,7 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pynxtools>=0.4.0"
+    "pynxtools>=0.7.0"
 ]
 
 [project.entry-points."pynxtools.reader"]
@@ -34,7 +34,7 @@ raman = "pynxtools_raman.reader:RamanReader"
 [project.optional-dependencies]
 dev = [
     "mypy",
-    "ruff==0.3.4",
+    "ruff>=0.6",
     "pytest",
     "types-pyyaml",
     "pip-tools",
@@ -52,7 +52,7 @@ version_scheme = "no-guess-dev"
 local_scheme = "node-and-date"
 
 [tool.ruff]
-include = ["pynxtools_raman/*.py", "tests/*.py"]
+include = ["src/pynxtools_raman/*.py", "tests/*.py"]
 line-length = 88
 indent-width = 4
 

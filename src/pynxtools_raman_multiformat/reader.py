@@ -24,6 +24,8 @@ import numpy as np
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
+import pynxtools_raman_multiformat.reader_rod_utils as pynx_rod
+
 logger = logging.getLogger("pynxtools")
 
 CONVERT_DICT = {}
@@ -42,7 +44,8 @@ class RamanReaderMulti(MultiFormatReader):
             ".yml": self.handle_eln_file,
             ".yaml": self.handle_eln_file,
             ".txt": self.handle_txt_file,
-            ".json": self.set_config_file}
+            ".json": self.set_config_file,
+            ".rod": self.handle_rod_file}
 
         self.txt_line_skips = None
 
@@ -68,6 +71,10 @@ class RamanReaderMulti(MultiFormatReader):
         self.read_txt_file(filepath)
         return {}
 
+    def handle_rod_file(self, filepath) -> Dict[str, Any]:
+        self.read_rod_file(filepath)
+        return {}
+
     def get_attr(self, key: str, path: str) -> Any:
         """
         Get the metadata that was stored in the main(=data) file.
@@ -76,6 +83,14 @@ class RamanReaderMulti(MultiFormatReader):
         if self.txt_data is None:
             return None
         return self.txt_data.get(path)
+
+    def read_rod_file(self, filepath):
+        # Initiate rod reader as calss
+        rod = pynx_rod.RodReader()
+        # read the rod file
+        rod.get_cif_file_content(filepath)
+        # get the key and value pairs from the rod file
+        self.rod_data = rod.extract_keys_and_values_from_cif()
 
     def read_txt_file(self, filepath):
         """
@@ -154,7 +169,7 @@ class RamanReaderMulti(MultiFormatReader):
         """
         if self.eln_data is None:
             return None
-        
+
         # Use the path to get the eln_data (this refers to the 2. case)
         if len(path) > 0:
             return self.eln_data.get(path)
@@ -190,14 +205,25 @@ class RamanReaderMulti(MultiFormatReader):
         return self.eln_data.get(key)
 
     def get_data(self, key: str, path: str) -> Any:
+        return self.rod_data.get(path)
+
+
+    # the functions below are for the witec eln + txt example
+    # Make the get_data function to be depend on input file types,
+    # i.e. the function is generalized for all file types. Should
+    # import the necessary sub functions from elsewhere depending on input
+    def get_data_eln(self, key: str, path: str) -> Any:
         """Returns measurement data from the given eln_data entry."""
+        print(self.extensions)
         if path.endswith(("x_values", "y_values","x_values_raman")):
             return self.txt_data.get(f"data/{path}")
         else:
             logger.warning(f"No axis name corresponding to the path {path}.")
 
-
-    def post_process(self) -> None:
+    # Restructure the post_process to depend on the given input file
+    # i.e. only a single post_process function should be required
+    # and the respective subprocessing steps be importet for specified files
+    def post_process_eln(self) -> None:
         """
         Post process the Raman data to add the Raman Shift from input laser wavelength and
         data wavelengths.

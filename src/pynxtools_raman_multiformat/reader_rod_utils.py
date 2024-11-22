@@ -131,9 +131,12 @@ class RodReader():
             output_list = []
             for element in block.find_loop(value_key):
                 output_list.append(element)
+            #try: # try to conver tto numpy array
+            #    output_list = np.array(output_list, dtype=float)
+            #    return output_list
             try: # try to conver tto numpy array
-                output_list = np.array(output_list, dtype=float)
-                return output_list
+                output_list_float = [float(item) for item in output_list]
+                return output_list_float
             except ValueError: # default string output if not convertable to float
                 return output_list
 

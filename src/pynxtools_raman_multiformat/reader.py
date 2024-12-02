@@ -76,18 +76,18 @@ class RamanReaderMulti(MultiFormatReader):
         self.txt_line_skips = None
         self.data_file_path = ""
         self.sub_reader_name = None
-        self.get_datas = {
-            "RamanOpenDatabase": get_data_rod, # hier is auch noch ein Typo im config file
-            "WitecAlpha": get_data_witec
-        }
-        self.get_attrs = {
-            "RamanOpenDatabase": get_attr_rod, # hier is auch noch ein Typo im config file
-            "WitecAlpha": get_attr_witec
-        }
-        self.post_processes = {
-            "RamanOpenDatabase": post_process_rod, # hier is auch noch ein Typo im config file
-            "WitecAlpha": post_process_witec
-        }
+        #self.get_datas = {
+        #    "RamanOpenDatabase": get_data_rod, # hier is auch noch ein Typo im config file
+        #    "WitecAlpha": get_data_witec
+        #}
+        #self.get_attrs = {
+        #    "RamanOpenDatabase": get_attr_rod, # hier is auch noch ein Typo im config file
+        #    "WitecAlpha": get_attr_witec
+        #}
+        #self.post_processes = {
+        #    "RamanOpenDatabase": post_process_rod, # hier is auch noch ein Typo im config file
+        #    "WitecAlpha": post_process_witec
+        #}
 
         self.extensions = {
             ".yml": self.handle_eln_file,
@@ -133,21 +133,102 @@ class RamanReaderMulti(MultiFormatReader):
 
 
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
+        self.post_process = post_process_rod
+        self.get_data = get_data_rod
+        self.get_attr = get_attr_rod
 
-        # Get the subreader name
-        sub_reader_name = self.get_subreader_from_config(self.config_file)
-
-        if sub_reader_name not in sub_reader_paths.keys():
-            raise ValueError
-
-        self.get_data = self.get_datas.get(sub_reader_name, self.get_data)
-        self.get_attr = self.get_attrs.get(sub_reader_name, self.get_attr)
-        self.post_process = self.post_processes.get(sub_reader_name, self.post_process)
-
-        get_data = self.get_data
+        super().set_get_data_function(self.get_data)
 
         self.read_rod_file(filepath)
         return {}
+
+
+
+
+    # if all these functions are renamed, the process does not work again.
+    def get_data(self, key: str, path: str) -> Any:
+        """
+        Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
+        """
+        print(self.raman_data.get(path))
+        try:
+            return float(self.raman_data.get(path))
+        except:
+            return self.raman_data.get(path)
+
+
+    def get_attr(self, key: str, path: str) -> Any:
+        """
+        Get the metadata that was stored in the main(=data) file.
+        """
+        return None
+
+    def post_process() -> None:
+        """
+        Post process the Raman data to add the Raman Shift from input laser wavelength and
+        data wavelengths.
+        """
+        return {}
+
+
+
+
+    def get_data_rod(self, key: str, path: str) -> Any:
+        """
+        Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
+        """
+        print("###################################")
+        try:
+            return float(self.raman_data.get(path))
+        except:
+            return self.raman_data.get(path)
+
+
+    def get_attr_rod(self, key: str, path: str) -> Any:
+        """
+        Get the metadata that was stored in the main(=data) file.
+        """
+        return None
+
+    def post_process_rod() -> None:
+        """
+        Post process the Raman data to add the Raman Shift from input laser wavelength and
+        data wavelengths.
+        """
+        return {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    if False:
+        def handle_rod_file(self, filepath) -> Dict[str, Any]:
+
+            # Get the subreader name
+            sub_reader_name = self.get_subreader_from_config(self.config_file)
+
+            if sub_reader_name not in sub_reader_paths.keys():
+                raise ValueError
+
+            self.get_data = self.get_datas.get(sub_reader_name, self.get_data)
+            self.get_attr = self.get_attrs.get(sub_reader_name, self.get_attr)
+            self.post_process = self.post_processes.get(sub_reader_name, self.post_process)
+
+            self.read_rod_file(filepath)
+            return {}
 
     def read_txt_file(self, filepath):
         """

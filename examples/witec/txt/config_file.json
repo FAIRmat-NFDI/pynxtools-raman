@@ -1,4 +1,5 @@
 {
+  "/ENTRY[entry]/PROGRAM[pynxtools_raman_sub_reader]/program":"WitecAlpha",
   "/ENTRY[entry]/INSTRUMENT[instrument]/scattering_configuration": "@eln",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength": "@eln",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength/@units": "@eln",

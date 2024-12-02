@@ -20,11 +20,16 @@ import logging
 from typing import Dict, Any
 import h5py
 import numpy as np
+import os
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml, parse_flatten_json
 
 import pynxtools_raman_multiformat.reader_rod_utils as pynx_rod
+
+
+#from pynxtools_raman_multiformat.sub_readers.witec import SubReaderWitec
+#from pynxtools_raman_multiformat.sub_readers.rod import SubReaderRod
 
 logger = logging.getLogger("pynxtools")
 
@@ -33,18 +38,14 @@ import importlib
 CONVERT_DICT = {}
 
 
-A=parse_flatten_json(self.config_file, create_link_dict=False)
-print(A["reader_name"])
+#A=parse_flatten_json(self.config_file, create_link_dict=False)
+#print(A["reader_name"])
 
 
 sub_reader_paths = {
-    "rod": "pynxtools_raman_multiformat.sub_readers.rod.get_data",
-    "witec": "pynxtools_raman_multiformat.sub_readers.witec.get_data"
+    "RamanOpeneDatabase": "pynxtools_raman_multiformat.sub_readers.rod",
+    "WitecAlpha": "pynxtools_raman_multiformat.sub_readers.witec"
 }
-
-
-# Dynamic input
-sub_reader = "rod"  # Can be "farewell" or any other key
 
 
 
@@ -55,9 +56,21 @@ class RamanReaderMulti(MultiFormatReader):
 
     supported_nxdls = ["NXraman"]
 
+    __non_default_file_extensions__ = [
+        ".rod",
+    ]
+
+    __vendors__ = ["witec", "rod"]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.txt_data: Dict[str, Any] = {}
+        self.raman_data: Dict[str, Any] = {}
+        self.reader_type: str = {}
+        self.txt_line_skips = None
+        self.data_file_path = ""
+        self.sub_reader_name = None
+
+
 
         self.extensions = {
             ".yml": self.handle_eln_file,
@@ -66,15 +79,25 @@ class RamanReaderMulti(MultiFormatReader):
             ".json": self.set_config_file,
             ".rod": self.handle_rod_file}
 
-        self.txt_line_skips = None
-
     def set_config_file(self, file_path: str) -> Dict[str, Any]:
         if self.config_file is not None:
             logger.info(
                 f"Config file already set. Replaced by the new file {file_path}."
             )
         self.config_file = file_path
+
         return {}
+
+    def get_subreader_from_config(self, file_path: str) -> Dict[str, Any]:
+        if file_path is not None:
+            config_file_for_subreader_name = parse_flatten_json(
+                self.config_file, create_link_dict=False
+            )
+
+        self.sub_reader_name = config_file_for_subreader_name.get("/ENTRY[entry]/PROGRAM[pynxtools_raman_sub_reader]/program")
+
+        return self.sub_reader_name
+
 
     def handle_eln_file(self, file_path: str) -> Dict[str, Any]:
         self.eln_data = parse_yml(
@@ -85,31 +108,31 @@ class RamanReaderMulti(MultiFormatReader):
         #self.txt_line_skips = self.eln_data.get('/ENTRY[entry]/skip')
 
         return {}
- 
+
     def handle_txt_file(self, filepath) -> Dict[str, Any]:
+        self.data_file_path = filepath
         self.read_txt_file(filepath)
         return {}
 
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
+
+        # Get the subreader name
+        sub_reader_name = self.get_subreader_from_config(self.config_file)
+
+        if sub_reader_name not in sub_reader_paths.keys():
+            raise ValueError
+
+        module_path = sub_reader_paths[sub_reader_name]
+        module = importlib.import_module(module_path)  # Import the module
+
+        get_data = getattr(module, "get_data")  # Get the function
+        get_attr = getattr(module, "get_attr")
+        post_process = getattr(module, "post_process")
+
+
+
         self.read_rod_file(filepath)
         return {}
-
-    def get_attr(self, key: str, path: str) -> Any:
-        """
-        Get the metadata that was stored in the main(=data) file.
-        """
-
-        if self.txt_data is None:
-            return None
-        return self.txt_data.get(path)
-
-    def read_rod_file(self, filepath):
-        # Initiate rod reader as calss
-        rod = pynx_rod.RodReader()
-        # read the rod file
-        rod.get_cif_file_content(filepath)
-        # get the key and value pairs from the rod file
-        self.rod_data = rod.extract_keys_and_values_from_cif()
 
     def read_txt_file(self, filepath):
         """
@@ -172,9 +195,17 @@ class RamanReaderMulti(MultiFormatReader):
             "data/y_values": data[:, 1]
         }
 
-        self.txt_data = data_dict
-        self.txt_header = header_dict
+        self.raman_data = data_dict
+        #header dict is not assigned here
+        #self.raman_data = header_dict
 
+    def read_rod_file(self, filepath):
+        # Initiate rod reader as calss
+        rod = pynx_rod.RodReader()
+        # read the rod file
+        rod.get_cif_file_content(filepath)
+        # get the key and value pairs from the rod file
+        self.raman_data = rod.extract_keys_and_values_from_cif()
 
     def get_eln_data(self, key: str, path: str) -> Any:
         """
@@ -224,61 +255,59 @@ class RamanReaderMulti(MultiFormatReader):
         return self.eln_data.get(key)
 
 
+    if False:
+        def _import_functions(self):
 
-    # import the correct "get_data_eln" function from the subreader
-    if sub_reader in sub_reader_paths:
-        module_path, function_name = sub_reader_paths[sub_reader].rsplit('.', 1)
-        module = importlib.import_module(module_path)  # Import the module
-        get_data = getattr(module, function_name)  # Get the function
-    else:
-        result = "Unknown action."
+            if self.sub_reader_name is None:
+                raise ValueError
+
+            module_path = sub_reader_paths[self.sub_reader_name]
+            module = importlib.import_module(module_path)  # Import the module
+
+            get_data = getattr(module, "get_data")  # Get the function
+            get_attr = getattr(module, "get_attr")
+            post_process = getattr(module, "post_process")
+
+            return get_data, get_attr, post_process
+
+
+
+
+
+
+
+
 
     if False:
-        def get_data(self, key: str, path: str) -> Any:
-            self.handle_eln_file(path)
-            return self.rod_data.get(path)
+        if sub_reader_name in sub_reader_paths:
+            if sub_reader_name is None:
+                raise ValueError
+            module_path = sub_reader_paths[sub_reader_name]
+            get_data_function_name = "get_data"
+            module = importlib.import_module(module_path)  # Import the module
+            get_data = getattr(module, get_data_function_name)  # Get the function
+        else:
+            result = "Unknown action."
 
+        # import the correct "get_attr" function from the subreader
+        if sub_reader_name in sub_reader_paths:
+            module_path = sub_reader_paths[sub_reader_name]
+            get_attr_function_name = "get_attr"
+            module = importlib.import_module(module_path)  # Import the module
+            get_attr = getattr(module, get_attr_function_name)  # Get the function
+        else:
+            result = "Unknown action."
 
-        # the functions below are for the witec eln + txt example
-        # Make the get_data function to be depend on input file types,
-        # i.e. the function is generalized for all file types. Should
-        # import the necessary sub functions from elsewhere depending on input
-        def get_data_eln(self, key: str, path: str) -> Any:
-            """Returns measurement data from the given eln_data entry."""
-            print(self.extensions)
-            if path.endswith(("x_values", "y_values","x_values_raman")):
-                return self.txt_data.get(f"data/{path}")
-            else:
-                logger.warning(f"No axis name corresponding to the path {path}.")
+        # import the correct "post_process" function from the subreader
+        if sub_reader_name in sub_reader_paths:
 
-    # Restructure the post_process to depend on the given input file
-    # i.e. only a single post_process function should be required
-    # and the respective subprocessing steps be importet for specified files
-    def post_process(self) -> None:
-        """
-        Post process the Raman data to add the Raman Shift from input laser wavelength and
-        data wavelengths.
-        """
+            module_path = sub_reader_paths[sub_reader_name]
+            post_process_function_name = "post_process"
+            module = importlib.import_module(module_path)  # Import the module
+            post_process = getattr(module, post_process_function_name)  # Get the function
+        else:
+            result = "Unknown action."
 
-        def transform_nm_to_wavenumber(self, lambda_laser, lambda_measurement):
-            stokes_raman_shift = -(1e7 / lambda_measurement - 1e7 / lambda_laser)
-            return stokes_raman_shift
-
-        def get_incident_wavelength_from_NXraman(self):
-            substring = "/beam_incident/wavelength"
-
-            # Find matching keys with contain this substring
-            wavelength_keys = [key for key in self.eln_data if substring in key]
-            # Filter the matching keys for the strings, which contain this substring at the end only
-            filtered_list = [string for string in wavelength_keys if string.endswith(substring)]
-            # get the laser wavelength
-            laser_wavelength = self.eln_data.get(filtered_list[0])
-            return laser_wavelength
-
-        laser_wavelength = get_incident_wavelength_from_NXraman(self)
-        x_values_raman = transform_nm_to_wavenumber(self, laser_wavelength, self.txt_data["data/x_values"])
-
-        self.txt_data["data/x_values_raman"] = x_values_raman
 
 READER = RamanReaderMulti
 

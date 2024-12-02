@@ -1,5 +1,5 @@
 {
-  "/ENTRY[entry]/PROGRAM[pynxtools_raman_sub_reader]/program":"RamanOpeneDatabase",
+  "/ENTRY[entry]/PROGRAM[pynxtools_raman_sub_reader]/program":"RamanOpenDatabase",
   "/ENTRY[entry]/INSTRUMENT[instrument]/scattering_configuration": "@data:_raman_measurement_device.direction_polarization",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength": "@data:_raman_measurement_device.excitation_laser_wavelength",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength/@units": "nm",

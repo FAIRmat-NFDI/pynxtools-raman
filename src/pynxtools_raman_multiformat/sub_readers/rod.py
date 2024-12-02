@@ -8,7 +8,7 @@ def get_data(self, key: str, path: str) -> Any:
     """
     Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
     """
-
+    print(self.raman_data.get(path))
     try:
         return float(self.raman_data.get(path))
     except:
@@ -21,7 +21,7 @@ def get_attr(self, key: str, path: str) -> Any:
     """
     return None
 
-def post_process(self) -> None:
+def post_process_rod() -> None:
     """
     Post process the Raman data to add the Raman Shift from input laser wavelength and
     data wavelengths.

@@ -43,11 +43,12 @@ CONVERT_DICT = {}
 
 
 sub_reader_paths = {
-    "RamanOpeneDatabase": "pynxtools_raman_multiformat.sub_readers.rod",
+    "RamanOpenDatabase": "pynxtools_raman_multiformat.sub_readers.rod",
     "WitecAlpha": "pynxtools_raman_multiformat.sub_readers.witec"
 }
 
-
+from pynxtools_raman_multiformat.sub_readers.rod import post_process_rod
+from pynxtools_raman_multiformat.sub_readers.witec import post_process_witec
 
 
 
@@ -62,6 +63,7 @@ class RamanReaderMulti(MultiFormatReader):
 
     __vendors__ = ["witec", "rod"]
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.raman_data: Dict[str, Any] = {}
@@ -69,8 +71,10 @@ class RamanReaderMulti(MultiFormatReader):
         self.txt_line_skips = None
         self.data_file_path = ""
         self.sub_reader_name = None
-
-
+        self.post_processes = {
+            "RamanOpenDatabase": post_process_rod, # hier is auch noch ein Typo im config file
+            "WitecAlpha": post_process_witec
+        }
 
         self.extensions = {
             ".yml": self.handle_eln_file,
@@ -114,6 +118,7 @@ class RamanReaderMulti(MultiFormatReader):
         self.read_txt_file(filepath)
         return {}
 
+
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
 
         # Get the subreader name
@@ -122,14 +127,9 @@ class RamanReaderMulti(MultiFormatReader):
         if sub_reader_name not in sub_reader_paths.keys():
             raise ValueError
 
-        module_path = sub_reader_paths[sub_reader_name]
-        module = importlib.import_module(module_path)  # Import the module
-
-        get_data = getattr(module, "get_data")  # Get the function
-        get_attr = getattr(module, "get_attr")
-        post_process = getattr(module, "post_process")
-
-
+        self.get_data = self.post_processes.get(sub_reader_name, self.get_data)
+        self.get_attr = self.post_processes.get(sub_reader_name, self.get_attr)
+        self.post_process = self.post_processes.get(sub_reader_name, self.post_process)
 
         self.read_rod_file(filepath)
         return {}

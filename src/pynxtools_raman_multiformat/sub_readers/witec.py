@@ -30,7 +30,7 @@ def get_attr(self, key: str, path: str) -> Any:
         return None
     return self.txt_data.get(path)
 
-def post_process(self) -> None:
+def post_process_witec(self) -> None:
     """
     Post process the Raman data to add the Raman Shift from input laser wavelength and
     data wavelengths.

@@ -50,6 +50,11 @@ sub_reader_paths = {
 from pynxtools_raman_multiformat.sub_readers.rod import post_process_rod
 from pynxtools_raman_multiformat.sub_readers.witec import post_process_witec
 
+from pynxtools_raman_multiformat.sub_readers.rod import get_data_rod
+from pynxtools_raman_multiformat.sub_readers.witec import get_data_witec
+
+from pynxtools_raman_multiformat.sub_readers.rod import get_attr_rod
+from pynxtools_raman_multiformat.sub_readers.witec import get_attr_witec
 
 
 class RamanReaderMulti(MultiFormatReader):
@@ -71,6 +76,14 @@ class RamanReaderMulti(MultiFormatReader):
         self.txt_line_skips = None
         self.data_file_path = ""
         self.sub_reader_name = None
+        self.get_datas = {
+            "RamanOpenDatabase": get_data_rod, # hier is auch noch ein Typo im config file
+            "WitecAlpha": get_data_witec
+        }
+        self.get_attrs = {
+            "RamanOpenDatabase": get_attr_rod, # hier is auch noch ein Typo im config file
+            "WitecAlpha": get_attr_witec
+        }
         self.post_processes = {
             "RamanOpenDatabase": post_process_rod, # hier is auch noch ein Typo im config file
             "WitecAlpha": post_process_witec
@@ -127,9 +140,11 @@ class RamanReaderMulti(MultiFormatReader):
         if sub_reader_name not in sub_reader_paths.keys():
             raise ValueError
 
-        self.get_data = self.post_processes.get(sub_reader_name, self.get_data)
-        self.get_attr = self.post_processes.get(sub_reader_name, self.get_attr)
+        self.get_data = self.get_datas.get(sub_reader_name, self.get_data)
+        self.get_attr = self.get_attrs.get(sub_reader_name, self.get_attr)
         self.post_process = self.post_processes.get(sub_reader_name, self.post_process)
+
+        get_data = self.get_data
 
         self.read_rod_file(filepath)
         return {}

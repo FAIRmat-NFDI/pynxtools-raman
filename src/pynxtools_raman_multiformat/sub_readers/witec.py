@@ -13,7 +13,7 @@ logger = logging.getLogger("pynxtools")
 #        else:
 #            logger.warning(f"No axis name corresponding to the path {path}.")
 
-def get_data(self, key: str, path: str) -> Any:
+def get_data_witec(self, key: str, path: str) -> Any:
     """Returns measurement data from the given eln_data entry."""
     print("####",self.sub_reader_name)
     if path.endswith(("x_values", "y_values","x_values_raman")):
@@ -21,7 +21,7 @@ def get_data(self, key: str, path: str) -> Any:
     else:
         logger.warning(f"No axis name corresponding to the path {path}.")
 
-def get_attr(self, key: str, path: str) -> Any:
+def get_attr_witec(self, key: str, path: str) -> Any:
     """
     Get the metadata that was stored in the main(=data) file.
     """

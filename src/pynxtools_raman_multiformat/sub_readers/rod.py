@@ -4,6 +4,12 @@ from typing import Dict, Any
 
 logger = logging.getLogger("pynxtools")
 
+
+class MapperROD():
+    def printing():
+        print("Test")
+
+
 def get_data_rod(self, key: str, path: str) -> Any:
     """
     Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.

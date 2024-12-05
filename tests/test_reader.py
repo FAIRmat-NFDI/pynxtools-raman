@@ -46,6 +46,6 @@ def test_nexus_conversion(caplog, tmp_path):
         tmp_path=tmp_path,
         caplog=caplog,
     )
-    #set caplog_level to error for now, as .rod cant fulfill all NXraman requirements
+    # set caplog_level to error for now, as .rod cant fulfill all NXraman requirements
     test.convert_to_nexus(caplog_level="ERROR", ignore_undocumented=False)
     test.check_reproducibility_of_nexus()

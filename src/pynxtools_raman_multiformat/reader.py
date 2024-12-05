@@ -26,8 +26,10 @@ from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
 
-import pynxtools_raman_multiformat.rod.rod_reader as RodToDictParser
+from pynxtools_raman_multiformat.rod.rod_reader import RodParser
 from pynxtools_raman_multiformat.witec.witec_reader import post_process_witec
+from pynxtools_raman_multiformat.witec.witec_reader import parse_txt_file
+
 
 
 logger = logging.getLogger("pynxtools")
@@ -92,53 +94,6 @@ class RamanReaderMulti(MultiFormatReader):
         """
         return self.get_metadata(self.raman_data, path, self.callbacks.entry_name)
 
-    def get_eln_data(self, key: str, path: str) -> Any:
-        """
-        Returns data from the eln file. This is done via the file: "config_file.json".
-        There are two suations:
-            1. The .json file has only a key assigned
-            2. The .json file has a key AND a value assigned.
-        The assigned value should be a "path", which reflects another entry in the eln file.
-        This acts as eln_path redirection, which is used for example to assign flexible
-        parameters from the eln_file (units, axisnames, etc.)
-        """
-        if self.eln_data is None:
-            return None
-
-        # Use the path to get the eln_data (this refers to the 2. case)
-        if len(path) > 0:
-            return self.eln_data.get(path)
-
-        # If no path is assigned, use directly the given key to extract
-        # the eln data/value (this refers to the 1. case)
-
-        # Filtering list, for NeXus concepts which use mixed notation of
-        # upper and lowercase to ensure correct NXclass labeling.
-        upper_and_lower_mixed_nexus_concepts = ["/detector_TYPE[",
-                                        "/beam_TYPE[",
-                                        "/source_TYPE[",
-                                        "/polfilter_TYPE[",
-                                        "/spectral_filter_TYPE[",
-                                        "/temp_control_TYPE[",
-                                        "/software_TYPE[",
-                                        "/LENS_OPT["
-
-        ]
-        if self.eln_data.get(key) is None:
-            # filter for mixed concept names
-            for string in upper_and_lower_mixed_nexus_concepts:
-                key = key.replace(string,"/[")
-            # add only characters, if they are lower case and if they are not "[" or "]"
-            result = ''.join([char for char in key if not (char.isupper() or char in '[]')])
-            # Filter as well for
-            result = result.replace("entry",f"ENTRY[{self.callbacks.entry_name}]")
-
-            if self.eln_data.get(result) is not None:
-                return self.eln_data.get(result)
-            else:
-                logger.warning(f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'.")
-        return self.eln_data.get(key)
-
     def read(
         self,
         template: dict = None,
@@ -155,8 +110,12 @@ class RamanReaderMulti(MultiFormatReader):
 
 
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
+        #specify default config file for rod files
+        reader_dir = Path(__file__).parent
+        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")
 
-        rod = RodToDictParser.RodReader()
+
+        rod = RodParser()
         # read the rod file
         rod.get_cif_file_content(filepath)
         # get the key and value pairs from the rod file
@@ -181,62 +140,8 @@ class RamanReaderMulti(MultiFormatReader):
         """
         Read a .txt file from Witec Alpha Raman spectrometer and save the header and measurement data.
         """
-        with open(filepath, "r") as file:
-            lines = file.readlines()
 
-        # Initialize dictionaries to hold header and data sections
-        header_dict = {}
-        data = []
-        line_count = 0
-        data_mini_header_length = None
-
-        # Track current section
-        current_section = None
-
-        for line in lines:
-            line_count += 1
-            # Remove any leading/trailing whitespace
-            line = line.strip()
-            # Go through the lines and define two different regions "Header" and
-            # "Data", as these need different methods to extract the data.
-            if line.startswith("[Header]"):
-                current_section = "header"
-                continue
-            elif line.startswith("[Data]"):
-                data_mini_header_length = line_count + 2
-                current_section = "data"
-
-                continue
-
-            # Parse the header section
-            if current_section == "header" and "=" in line:
-                key, value = line.split("=", 1)
-                header_dict[key.strip()] = value.strip()
-
-            # Parse the data section
-            elif current_section == "data" and "," in line:
-                # The header is set excactly until the float-like column data starts
-                # Rework this later to extract full metadata
-                if line_count <= data_mini_header_length:
-                    if line.startswith("[Header]"):
-                        logger.info(
-                            f"[Header] elements in the file {filepath}, are not parsed yet. Consider adden the respective functionality."
-                        )
-                if line_count > data_mini_header_length:
-                    values = line.split(",")
-                    data.append([float(values[0].strip()), float(values[1].strip())])
-
-        # Transform: [[A, B], [C, D], [E, F]] into [[A, C, E], [B, D, F]]
-        data = [list(item) for item in zip(*data)]
-
-        # assign column data with keys
-        data_dict = {
-            "data/x_values": data[0],
-            "data/y_values": data[1]
-        }
-
-
-        self.raman_data = data_dict
+        self.raman_data = parse_txt_file(self, filepath)
         self.post_process = post_process_witec.__get__(self, RamanReaderMulti)
 
         return {}

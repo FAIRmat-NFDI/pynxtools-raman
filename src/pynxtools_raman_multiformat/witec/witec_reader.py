@@ -7,22 +7,68 @@ import numpy as np
 logger = logging.getLogger("pynxtools")
 
 
-def get_data_witec(self, key: str, path: str) -> Any:
-    """Returns measurement data from the given eln_data entry."""
-    print("####",self.sub_reader_name)
-    if path.endswith(("x_values", "y_values","x_values_raman")):
-        return self.raman_data.get(f"data/{path}")
-    else:
-        logger.warning(f"No axis name corresponding to the path {path}.")
-
-def get_attr_witec(self, key: str, path: str) -> Any:
+def parse_txt_file(self, filepath):
     """
-    Get the metadata that was stored in the main(=data) file.
+    Read a .txt file from Witec Alpha Raman spectrometer and return a data dictionary
+    which contains Raman shift and Intensity
     """
+    with open(filepath, "r") as file:
+        lines = file.readlines()
 
-    if self.txt_data is None:
-        return None
-    return self.txt_data.get(path)
+    # Initialize dictionaries to hold header and data sections
+    header_dict = {}
+    data = []
+    line_count = 0
+    data_mini_header_length = None
+
+    # Track current section
+    current_section = None
+
+    for line in lines:
+        line_count += 1
+        # Remove any leading/trailing whitespace
+        line = line.strip()
+        # Go through the lines and define two different regions "Header" and
+        # "Data", as these need different methods to extract the data.
+        if line.startswith("[Header]"):
+            current_section = "header"
+            continue
+        elif line.startswith("[Data]"):
+            data_mini_header_length = line_count + 2
+            current_section = "data"
+
+            continue
+
+        # Parse the header section
+        if current_section == "header" and "=" in line:
+            key, value = line.split("=", 1)
+            header_dict[key.strip()] = value.strip()
+
+        # Parse the data section
+        elif current_section == "data" and "," in line:
+            # The header is set excactly until the float-like column data starts
+            # Rework this later to extract full metadata
+            if line_count <= data_mini_header_length:
+                if line.startswith("[Header]"):
+                    logger.info(
+                        f"[Header] elements in the file {filepath}, are not parsed yet. Consider adden the respective functionality."
+                    )
+            if line_count > data_mini_header_length:
+                values = line.split(",")
+                data.append([float(values[0].strip()), float(values[1].strip())])
+
+    # Transform: [[A, B], [C, D], [E, F]] into [[A, C, E], [B, D, F]]
+    data = [list(item) for item in zip(*data)]
+
+    # assign column data with keys
+    data_dict = {
+        "data/x_values": data[0],
+        "data/y_values": data[1]
+    }
+    return data_dict
+
+
+
 
 def post_process_witec(self) -> None:
     """

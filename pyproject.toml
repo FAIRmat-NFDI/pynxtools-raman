@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "pynxtools>=0.7.0",
-    "gemmi"
+    "gemmi>=0.6.7"
 ]
 
 [project.entry-points."pynxtools.reader"]

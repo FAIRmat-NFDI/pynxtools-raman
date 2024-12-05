@@ -6,7 +6,7 @@ import gemmi # for cif file handling
 from pathlib import Path
 
 
-class RodReader():
+class RodParser():
     """
     This class provides the ultilieies to read in a .rod file with "get_cif_file_content".
     Then extract all data via "extract_keys_and_values_from_cif" into a dictionary.

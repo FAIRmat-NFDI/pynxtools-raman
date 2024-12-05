@@ -22,7 +22,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pynxtools>=0.7.0"
+    "pynxtools>=0.7.0",
+    "gemmi"
 ]
 
 [project.entry-points."pynxtools.reader"]

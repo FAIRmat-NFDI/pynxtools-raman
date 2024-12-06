@@ -17,16 +17,16 @@ from pynxtools.testing.nexus_conversion import ReaderTest
         ("witec", "WARNING"),
     ],
 )
-def test_nexus_conversion_multi(data_dir, caplog_level, tmp_path, caplog):
+def test_nexus_conversion(data_dir, caplog_level, tmp_path, caplog):
     """
     Tests the conversion into nexus.
     """
     caplog.clear()
-    dir_path_multi = Path(__file__).parent / f"data/{data_dir}"
+    dir_path = Path(__file__).parent / f"data/{data_dir}"
     test = ReaderTest(
         nxdl="NXraman",
         reader_name="raman",
-        files_or_dir=glob(os.path.join(dir_path_multi, "*")),
+        files_or_dir=glob(os.path.join(dir_path, "*")),
         tmp_path=tmp_path,
         caplog=caplog,
     )

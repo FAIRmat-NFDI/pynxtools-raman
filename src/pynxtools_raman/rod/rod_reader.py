@@ -1,5 +1,4 @@
 from typing import List, Dict, Any, Union
-import numpy as np
 import gemmi  # for cif file handling
 
 from pathlib import Path
@@ -97,7 +96,7 @@ class RodParser:
 
     def get_cif_value_from_key(
         self, value_key: str, is_cif_loop_value=False
-    ) -> Union[str, list, np.array]:
+    ) -> Union[str, list]:
         """
         Parse the top-level Prodigy export settings into a dict.
 
@@ -141,6 +140,7 @@ class RodParser:
                 return output_list_float
             except ValueError:  # default string output if not convertable to float
                 return output_list
+        return None
 
     def extract_keys_and_values_from_cif(self):
         loop_positions = self.get_string_position("loop_\n")

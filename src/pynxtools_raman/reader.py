@@ -33,7 +33,7 @@ from pynxtools_raman.witec.witec_reader import parse_txt_file
 
 logger = logging.getLogger("pynxtools")
 
-CONVERT_DICT = {}
+CONVERT_DICT: Dict[str, str] = {}
 
 REPLACE_NESTED: Dict[str, str] = {}
 
@@ -42,8 +42,6 @@ class RamanReader(MultiFormatReader):
     """MyDataReader implementation for the DataConverter to convert mydata to NeXus."""
 
     supported_nxdls = ["NXraman"]
-
-    reader_dir = Path(__file__).parent
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -106,7 +104,7 @@ class RamanReader(MultiFormatReader):
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
         # specify default config file for rod files
         reader_dir = Path(__file__).parent
-        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")
+        self.config_file: reader_dir.joinpath("config", "config_file_rod.json") # pylint: disable=invalid-type-comment
 
         rod = RodParser()
         # read the rod file

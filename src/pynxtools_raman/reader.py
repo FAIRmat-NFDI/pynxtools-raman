@@ -20,7 +20,7 @@ import logging
 import datetime
 from typing import Dict, Any
 from pathlib import Path
-from typing import Any, Dict, List, Tuple #Optional, Set, Union
+from typing import Any, Dict, List, Tuple  # Optional, Set, Union
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
@@ -29,7 +29,6 @@ from pynxtools.dataconverter.readers.utils import parse_yml
 from pynxtools_raman.rod.rod_reader import RodParser
 from pynxtools_raman.witec.witec_reader import post_process_witec
 from pynxtools_raman.witec.witec_reader import parse_txt_file
-
 
 
 logger = logging.getLogger("pynxtools")
@@ -53,9 +52,6 @@ class RamanReader(MultiFormatReader):
         self.raman_data: Dict[str, Any] = {}
         self.eln_data: Dict[str, Any] = {}
 
-
-
-
         self.meta_data_length = None
 
         self.extensions = {
@@ -63,10 +59,11 @@ class RamanReader(MultiFormatReader):
             ".yaml": self.handle_eln_file,
             ".txt": self.handle_txt_file,
             ".json": self.set_config_file,
-            ".rod": self.handle_rod_file}
+            ".rod": self.handle_rod_file,
+        }
 
-        #only required if multiple file types are present
-        #for ext in RamanReader.__prmt_file_ext__:
+        # only required if multiple file types are present
+        # for ext in RamanReader.__prmt_file_ext__:
         #    self.extensions[ext] = self.handle_data_file
 
     def set_config_file(self, file_path: str) -> Dict[str, Any]:
@@ -100,18 +97,16 @@ class RamanReader(MultiFormatReader):
         **kwargs,
     ) -> dict:
         template = super().read(template, file_paths, objects, suppress_warning=True)
-        #set default data
+        # set default data
 
         template["/@default"] = "entry"
 
         return template
 
-
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
-        #specify default config file for rod files
+        # specify default config file for rod files
         reader_dir = Path(__file__).parent
         self.config_file: reader_dir.joinpath("config", "config_file_rod.json")
-
 
         rod = RodParser()
         # read the rod file
@@ -121,34 +116,35 @@ class RamanReader(MultiFormatReader):
         self.meta_data_length = len(self.raman_data)
         # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
         key_to_make_value_lower_case = "_raman_measurement.environment"
-        self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(key_to_make_value_lower_case).lower()
-
+        self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(
+            key_to_make_value_lower_case
+        ).lower()
 
         # transform the string into a datetime object
-        time_key = '_raman_measurement.datetime_initiated'
+        time_key = "_raman_measurement.datetime_initiated"
         date_time_str = self.raman_data.get(time_key)
         date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
         # assume UTC for .rod data, as this is not specified in detail
         tzinfo = datetime.timezone.utc
         if isinstance(date_time_obj, datetime.datetime):
-
             if tzinfo is not None:
                 # Apply the specified timezone to the datetime object
                 date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
 
-            #assign the dictionary the corrrected date format
+            # assign the dictionary the corrrected date format
             self.raman_data[time_key] = date_time_obj.isoformat()
 
         # remove capitalization
-        objective_type_key = '_raman_measurement_device.optics_type'
-        self.raman_data[objective_type_key] = self.raman_data.get(objective_type_key).lower()
+        objective_type_key = "_raman_measurement_device.optics_type"
+        self.raman_data[objective_type_key] = self.raman_data.get(
+            objective_type_key
+        ).lower()
         # set a valid raman NXDL value, but only if it matches one of the correct ones:
-        objective_type_list = ['objective', 'lens', 'glass fiber', 'none']
+        objective_type_list = ["objective", "lens", "glass fiber", "none"]
         if self.raman_data.get(objective_type_key) not in objective_type_list:
-            self.raman_data[objective_type_key] = 'other'
+            self.raman_data[objective_type_key] = "other"
 
         return {}
-
 
     def handle_txt_file(self, filepath):
         """
@@ -182,31 +178,34 @@ class RamanReader(MultiFormatReader):
 
         # Filtering list, for NeXus concepts which use mixed notation of
         # upper and lowercase to ensure correct NXclass labeling.
-        upper_and_lower_mixed_nexus_concepts = ["/detector_TYPE[",
-                                        "/beam_TYPE[",
-                                        "/source_TYPE[",
-                                        "/polfilter_TYPE[",
-                                        "/spectral_filter_TYPE[",
-                                        "/temp_control_TYPE[",
-                                        "/software_TYPE[",
-                                        "/LENS_OPT["
-
+        upper_and_lower_mixed_nexus_concepts = [
+            "/detector_TYPE[",
+            "/beam_TYPE[",
+            "/source_TYPE[",
+            "/polfilter_TYPE[",
+            "/spectral_filter_TYPE[",
+            "/temp_control_TYPE[",
+            "/software_TYPE[",
+            "/LENS_OPT[",
         ]
         if self.eln_data.get(key) is None:
             # filter for mixed concept names
             for string in upper_and_lower_mixed_nexus_concepts:
-                key = key.replace(string,"/[")
+                key = key.replace(string, "/[")
             # add only characters, if they are lower case and if they are not "[" or "]"
-            result = ''.join([char for char in key if not (char.isupper() or char in '[]')])
+            result = "".join(
+                [char for char in key if not (char.isupper() or char in "[]")]
+            )
             # Filter as well for
-            result = result.replace("entry",f"ENTRY[{self.callbacks.entry_name}]")
+            result = result.replace("entry", f"ENTRY[{self.callbacks.entry_name}]")
 
             if self.eln_data.get(result) is not None:
                 return self.eln_data.get(result)
             else:
-                logger.warning(f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'.")
+                logger.warning(
+                    f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'."
+                )
         return self.eln_data.get(key)
-
 
     def get_data(self, key: str, path: str) -> Any:
         """
@@ -216,7 +215,7 @@ class RamanReader(MultiFormatReader):
         value = self.raman_data.get(path)
 
         # to calculate Raman shift for Witec Alpha from eln data
-        #if key == "/ENTRY[entry]/DATA[data]/x_values_raman":
+        # if key == "/ENTRY[entry]/DATA[data]/x_values_raman":
         #    witec_laser_wavelength = self.eln_data.get("/ENTRY[entry]/instrument/beam_incident/wavelength")
         #    return None
 
@@ -229,6 +228,4 @@ class RamanReader(MultiFormatReader):
             logger.warning(f"No axis name corresponding to the path {path}.")
 
 
-
 READER = RamanReader
-

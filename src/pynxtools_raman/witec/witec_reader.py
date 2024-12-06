@@ -61,13 +61,8 @@ def parse_txt_file(self, filepath):
     data = [list(item) for item in zip(*data)]
 
     # assign column data with keys
-    data_dict = {
-        "data/x_values": data[0],
-        "data/y_values": data[1]
-    }
+    data_dict = {"data/x_values": data[0], "data/y_values": data[1]}
     return data_dict
-
-
 
 
 def post_process_witec(self) -> None:
@@ -77,8 +72,10 @@ def post_process_witec(self) -> None:
     """
 
     def transform_nm_to_wavenumber(lambda_laser, lambda_measurement):
-        stokes_raman_shift = -(1e7 / np.array(lambda_measurement) - 1e7 / np.array(lambda_laser))
-        #return a list as output
+        stokes_raman_shift = -(
+            1e7 / np.array(lambda_measurement) - 1e7 / np.array(lambda_laser)
+        )
+        # return a list as output
         return stokes_raman_shift.tolist()
 
     def get_incident_wavelength_from_NXraman():
@@ -87,15 +84,18 @@ def post_process_witec(self) -> None:
         # Find matching keys with contain this substring
         wavelength_keys = [key for key in self.eln_data if substring in key]
         # Filter the matching keys for the strings, which contain this substring at the end only
-        filtered_list = [string for string in wavelength_keys if string.endswith(substring)]
+        filtered_list = [
+            string for string in wavelength_keys if string.endswith(substring)
+        ]
         # get the laser wavelength
         laser_wavelength = self.eln_data.get(filtered_list[0])
         return laser_wavelength
 
     laser_wavelength = get_incident_wavelength_from_NXraman()
 
-    x_values_raman = transform_nm_to_wavenumber(laser_wavelength, self.raman_data["data/x_values"])
+    x_values_raman = transform_nm_to_wavenumber(
+        laser_wavelength, self.raman_data["data/x_values"]
+    )
 
-    #update the data dictionary
+    # update the data dictionary
     self.raman_data["data/x_values_raman"] = x_values_raman
-

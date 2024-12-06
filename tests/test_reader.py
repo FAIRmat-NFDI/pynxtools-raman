@@ -10,7 +10,6 @@ from pathlib import Path
 from pynxtools.testing.nexus_conversion import ReaderTest
 
 
-
 @pytest.mark.parametrize(
     "data_dir, caplog_level",
     [

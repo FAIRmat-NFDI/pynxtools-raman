@@ -20,7 +20,7 @@ import logging
 import datetime
 from typing import Dict, Any
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional, Union # Set
+from typing import Any, Dict, List, Tuple, Optional, Union  # Set
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml

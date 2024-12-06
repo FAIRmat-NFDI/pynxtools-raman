@@ -45,7 +45,7 @@ class RodParser():
                 if string_element in lines[0]:
                     line_positions_of_str_element.append(line_number)
         else:
-            if rod_lines == None:
+            if rod_lines is None:
                 print("rod_lines_is_none")
             else:
                 for line_number, lines in enumerate(rod_lines):
@@ -83,9 +83,9 @@ class RodParser():
             print(".cif file parsing warning: Not all cif-keys were parsed.")
             return cif_key_loop_boolean_dict
 
-    def key_pos_after_loop(self, loop_pos_list, key_pos_list):
+    def key_pos_after_loop(self, loop_pos_lists, key_pos_list):
         loop_key_positons = []
-        for loop_pos_list in loop_pos_list:
+        for loop_pos_list in loop_pos_lists:
             counter = 1
             while loop_pos_list + counter in key_pos_list:
                 if counter >= 100:  # implemented to avoid infinite loop, how to do better?
@@ -105,8 +105,8 @@ class RodParser():
             name of the key value, which is used for extraction
 
         is_cif_loop_value : boolean
-            if the key value, is part of a loop structure, this has to be set 
-            correctly to extracat the respective array-like values 
+            if the key value, is part of a loop structure, this has to be set
+            correctly to extracat the respective array-like values
 
         Returns
         -------

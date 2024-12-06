@@ -1,300 +1,234 @@
-from typing import Any, Tuple
-from typing import Dict
+# Copyright The NOMAD Authors.
+#
+# This file is part of NOMAD. See https://nomad-lab.eu for further info.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""An example reader implementation based on the MultiFormatReader."""
 
-import math
-import os
-from importlib.metadata import PackageNotFoundError, version
-from typing import Any, Tuple
+import logging
+import datetime
+from typing import Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List, Tuple #Optional, Set, Union
 
-import numpy as np
-import pandas as pd
-import yaml
-from pynxtools import get_nexus_version, get_nexus_version_hash
-from pynxtools.dataconverter.helpers import extract_atom_types
-from pynxtools.dataconverter.readers.base.reader import BaseReader
-from pynxtools.dataconverter.readers.utils import FlattenSettings, flatten_and_replace
+from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
+from pynxtools.dataconverter.readers.utils import parse_yml
 
 
-from pynxtools.dataconverter.readers.base.reader import BaseReader
-
-# Still hardcoded parameters:
-# "spectrum_data_x" <- name of X data array
-# "spectrum_data_x_Raman" <- name of generated X data array in Raman reference frame
-# "spectrum_data_y" <- Name of y data array
-# "filename"
-
-DEFAULT_HEADER = {"sep": "\t", "skip": 0}
+from pynxtools_raman.rod.rod_reader import RodParser
+from pynxtools_raman.witec.witec_reader import post_process_witec
+from pynxtools_raman.witec.witec_reader import parse_txt_file
 
 
-CONVERT_DICT = {
-    "unit": "@units",
-    "detector": "detector_TYPE[detector_DU970BV]",  # "detector": "detector_TYPE[detector_DU970BV]", sollte auch passen mit "detector": "DETECTOR[detector_DU970BV]",
-    "source_532nmlaser": "SOURCE[source_532nmlaser]",
-    "beam_532nmlaser": "beam_TYPE[beam_532nmlaser]",
-    "incident_beam": "beam_incident",  # this entry can be removed from NXraman definition, as at least one beam was made required in NXopt after the workshop
-    "Data": "DATA[data]",
-    "instrument": "INSTRUMENT[instrument]",
-    "sample": "SAMPLE[sample_PET_or_PS]",
-    "user": "USER[user]",
-    "spectrum_data_y": "DATA[data]/spectrum_data_y",
-    "spectrum_data_x": "DATA[data]/spectrum_data_x",
-    "spectrum_data_y_unit": "DATA[data]/spectrum_data_y/@units",
-    "spectrum_data_x_unit": "DATA[data]/spectrum_data_x/@units",
-    "spectrum_data_y_longname": "DATA[data]/spectrum_data_y/@long_name",
-    "spectrum_data_x_longname": "DATA[data]/spectrum_data_x/@long_name",
-    "source_type": "type",
-    "device_information": "FABRICATION[device_information]",
-    "monochromator": "MONOCHROMATOR[monochromator]",
-    "objective_lens": "LENS_OPT[objective_lens]",
-}
 
-CONFIG_KEYS = [
-    "colnames",
-    "filename",
-    "filename_image1",
-    "filename_image2",
-    "filename_reference",
-    "plot_name_y",
-    "plot_name_x",
-    "sep",
-    "skip",
-    "unit_y",
-    "unit_x",
-]
+logger = logging.getLogger("pynxtools")
+
+CONVERT_DICT = {}
 
 REPLACE_NESTED: Dict[str, str] = {}
-# REPLACE_NESTED = {
-#    #    "instrument": "INSTRUMENT[instrument]",
-# }
 
 
-def load_header(filename, default):
-    """load the yaml description file, and apply defaults from
-    the defalut dict for all keys not found from the file.
-    Parameters:
-        filename:           a yaml file containing the definitions
-        default_header:     predefined default values
-    Returns:
-        a dict containing the loaded information
-    """
-
-    with open(filename, "rt", encoding="utf8") as file:
-        header = yaml.safe_load(file)
-
-    clean_header = header
-
-    for key, value in default.items():
-        if key not in clean_header:
-            clean_header[key] = value
-
-    if "sep" in header:
-        clean_header["sep"] = header["sep"].encode("utf-8").decode("unicode_escape")
-
-    return clean_header
-
-
-def load_as_pandas_array(my_file, header):
-    """Load a CSV output file using the header dict.
-    Use the fields: colnames, skip and sep from the header
-    to instruct the csv reader about:
-    colnames    -- column names
-    skip        -- how many lines to skip
-    sep         -- separator character in the file
-    Parameters:
-        my_file  string, file name
-        header   dict header read from a yaml file
-    Returns:
-        A pandas array is returned.
-    """
-    required_parameters = ("colnames", "skip", "sep")
-    for required_parameter in required_parameters:
-        if required_parameter not in header:
-            raise ValueError("colnames, skip and sep are required header parameters!")
-
-    if not os.path.isfile(my_file):
-        raise IOError(f"File not found error: {my_file}")
-
-    whole_data = pd.read_csv(
-        my_file,
-        # use header = None and names to define custom column names
-        header=None,
-        encoding="latin",
-        names=header["colnames"],
-        skiprows=header["skip"],
-        delimiter=header["sep"],
-    )
-    return whole_data
-
-
-def populate_header_dict(file_paths):
-    """This function creates and populates the header dictionary
-    reading one or more yaml file.
-    Parameters:
-        file_paths  a list of file paths to be read
-    Returns:
-        a dict merging the content of all files
-    """
-
-    header = DEFAULT_HEADER
-
-    for file_path in file_paths:
-        if os.path.splitext(file_path)[1].lower() in [".yaml", ".yml"]:
-            header = load_header(file_path, header)
-            if "filename" not in header:
-                raise KeyError("filename is missing from", file_path)
-            data_file = os.path.join(os.path.split(file_path)[0], header["filename"])
-
-            # if the path is not right, try the path provided directly
-            if not os.path.isfile(data_file):
-                data_file = header["filename"]
-
-    return header, data_file
-
-
-def populate_template_dict(header, template):
-    """The template dictionary is then populated according to the content of header dictionary."""
-
-    eln_data_dict = flatten_and_replace(
-        FlattenSettings(
-            dic=header,
-            convert_dict=CONVERT_DICT,
-            replace_nested=REPLACE_NESTED,
-            ignore_keys=CONFIG_KEYS,
-        )
-    )
-
-    template.update(eln_data_dict)
-
-    return template
-
-
-def header_labels(header):
-    """Define data labels (column names)"""
-
-    labels = {"CCD_cts": []}
-    for key, val in labels.items():
-        val.append(f"{key}")
-    return labels
-
-
-def data_array(whole_data, data_index):
-    """User defined variables to produce slices of the whole data set"""
-
-    axis_label = whole_data.keys()[data_index]
-
-    length_data_entries = len(whole_data[axis_label])
-    my_data_array = np.empty([length_data_entries])
-
-    my_data_array[:] = whole_data[axis_label].to_numpy().astype("float64")
-
-    return my_data_array
-
-
-class RamanReader(BaseReader):
-    """
-    Reader for my method....
-    PLEASE UPDATE
-    """
+class RamanReader(MultiFormatReader):
+    """MyDataReader implementation for the DataConverter to convert mydata to NeXus."""
 
     supported_nxdls = ["NXraman"]
 
-    @staticmethod
-    def populate_header_dict_with_datasets(file_paths):
-        """This is a raman-specific processing of data.
-        The procedure is the following:
-        - the header dictionary is initialized reading a yaml file
-        - the data are read from header["filename"] and saved in a pandas object
-        - an array is shaped according to application definition in a 5D array (numpy array)
-        - the array is saved in a HDF5 file as a dataset
-        - virtual datasets instances are created in the header dictionary,
-        referencing to data in the created HDF5 file.
-        - the header is finally returned, ready to be parsed in the final template dictionary
-        """
-        header, data_file = populate_header_dict(file_paths)
+    reader_dir = Path(__file__).parent
 
-        if os.path.isfile(data_file):
-            whole_data = load_as_pandas_array(data_file, header)
-        else:
-            # this we have tried, we should throw an error...
-            whole_data = load_as_pandas_array(header["filename"], header)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        # As the specific name of beam entries in unknown, extract all beam names from instrument level
-        list_of_beams = []
-        for i in header["instrument"].keys():
-            # look for all entries in instrument, add only if the first letters are like "beam_"
-            if len(i) > 4:
-                if i[:5] == "beam_":
-                    list_of_beams.append(i)
-        light_source_name = list_of_beams[0]
-        laser_wavelength = header["instrument"][light_source_name][
-            "incident_wavelength"
-        ]["value"]
+        self.raman_data_dicts: List[Dict[str, Any]] = []
+        self.raman_data: Dict[str, Any] = {}
+        self.eln_data: Dict[str, Any] = {}
 
-        def transform_nm_to_wavenumber(lambda_laser, lambda_measurement):
-            return -(1e7 / lambda_measurement - 1e7 / lambda_laser)
 
-        measured_wavelengths = whole_data["wavelength"].to_numpy()
 
-        # Add the new created data to the panda data frame
-        data_x_Raman = transform_nm_to_wavenumber(
-            laser_wavelength * np.ones(len(measured_wavelengths)), measured_wavelengths
-        )
-        whole_data["DATA[data]/spectrum_data_x_Raman"] = data_x_Raman
 
-        labels = header_labels(header)
+        self.meta_data_length = None
 
-        def add_data_to_header(data_set, data_column_index, name):
-            header[str(name)] = data_array(data_set, data_column_index)
+        self.extensions = {
+            ".yml": self.handle_eln_file,
+            ".yaml": self.handle_eln_file,
+            ".txt": self.handle_txt_file,
+            ".json": self.set_config_file,
+            ".rod": self.handle_rod_file}
 
-        # add specific data parts to the header of the file
-        add_data_to_header(whole_data, 0, "spectrum_data_x")
-        add_data_to_header(whole_data, 1, "spectrum_data_y")
-        add_data_to_header(whole_data, 2, "DATA[data]/spectrum_data_x_Raman")
+        #only required if multiple file types are present
+        #for ext in RamanReader.__prmt_file_ext__:
+        #    self.extensions[ext] = self.handle_data_file
 
-        if "atom_types" not in header["sample"]:
-            header["atom_types"] = extract_atom_types(
-                header["sample"]["chemical_formula"]
+    def set_config_file(self, file_path: str) -> Dict[str, Any]:
+        if self.config_file is not None:
+            logger.info(
+                f"Config file already set. Replaced by the new file {file_path}."
             )
+        self.config_file = file_path
+        return {}
 
-        return header, labels
+    def handle_eln_file(self, file_path: str) -> Dict[str, Any]:
+        self.eln_data = parse_yml(
+            file_path,
+            convert_dict=CONVERT_DICT,
+            parent_key="/ENTRY[entry]",
+        )
+
+        return {}
+
+    def get_attr(self, key: str, path: str) -> Any:
+        """
+        Get the metadata that was stored in the main file.
+        """
+        return self.get_metadata(self.raman_data, path, self.callbacks.entry_name)
 
     def read(
         self,
         template: dict = None,
         file_paths: Tuple[str] = None,
         objects: Tuple[Any] = None,
+        **kwargs,
     ) -> dict:
-        """Reads data from given file and returns a filled template dictionary.
-        A handlings of virtual datasets is implemented:
-        virtual dataset are created inside the final NeXus file.
-        The template entry is filled with a dictionary containing the following keys:
-        - link: the path of the external data file and the path of desired dataset inside it
-        - shape: numpy array slice object (according to array slice notation)
-        """
+        template = super().read(template, file_paths, objects, suppress_warning=True)
+        #set default data
 
-        if not file_paths:
-            raise IOError("No input files were given to raman Reader.")
-
-        # The header dictionary is filled with entries.
-        header, labels = RamanReader.populate_header_dict_with_datasets(file_paths)
-        # The template dictionary is filled
-        template = populate_template_dict(header, template)
-
-        # assign main axis for data entry
-        template[f"/ENTRY[entry]/DATA[data]/@signal"] = f"spectrum_data_y"
-        template[f"/ENTRY[entry]/DATA[data]/@axes"] = f"spectrum_data_x_Raman"
-
-        # add unit and long name for calculated Raman data
-        template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x_Raman/@units"] = "1/cm"
-        template[f"/ENTRY[entry]/DATA[data]/spectrum_data_x_Raman/@long_name"] = (
-            f"Raman Shift"
-        )
+        template["/@default"] = "entry"
 
         return template
 
 
-# This has to be set to allow the convert script to use this reader. Set it to "MyDataReader".
+    def handle_rod_file(self, filepath) -> Dict[str, Any]:
+        #specify default config file for rod files
+        reader_dir = Path(__file__).parent
+        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")
+
+
+        rod = RodParser()
+        # read the rod file
+        rod.get_cif_file_content(filepath)
+        # get the key and value pairs from the rod file
+        self.raman_data = rod.extract_keys_and_values_from_cif()
+        self.meta_data_length = len(self.raman_data)
+        # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
+        key_to_make_value_lower_case = "_raman_measurement.environment"
+        self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(key_to_make_value_lower_case).lower()
+
+
+        # transform the string into a datetime object
+        time_key = '_raman_measurement.datetime_initiated'
+        date_time_str = self.raman_data.get(time_key)
+        date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
+        # assume UTC for .rod data, as this is not specified in detail
+        tzinfo = datetime.timezone.utc
+        if isinstance(date_time_obj, datetime.datetime):
+
+            if tzinfo is not None:
+                # Apply the specified timezone to the datetime object
+                date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
+
+            #assign the dictionary the corrrected date format
+            self.raman_data[time_key] = date_time_obj.isoformat()
+
+        # remove capitalization
+        objective_type_key = '_raman_measurement_device.optics_type'
+        self.raman_data[objective_type_key] = self.raman_data.get(objective_type_key).lower()
+        # set a valid raman NXDL value, but only if it matches one of the correct ones:
+        objective_type_list = ['objective', 'lens', 'glass fiber', 'none']
+        if self.raman_data.get(objective_type_key) not in objective_type_list:
+            self.raman_data[objective_type_key] = 'other'
+
+        return {}
+
+
+    def handle_txt_file(self, filepath):
+        """
+        Read a .txt file from Witec Alpha Raman spectrometer and save the header and measurement data.
+        """
+
+        self.raman_data = parse_txt_file(self, filepath)
+        self.post_process = post_process_witec.__get__(self, RamanReader)
+
+        return {}
+
+    def get_eln_data(self, key: str, path: str) -> Any:
+        """
+        Returns data from the eln file. This is done via the file: "config_file.json".
+        There are two suations:
+            1. The .json file has only a key assigned
+            2. The .json file has a key AND a value assigned.
+        The assigned value should be a "path", which reflects another entry in the eln file.
+        This acts as eln_path redirection, which is used for example to assign flexible
+        parameters from the eln_file (units, axisnames, etc.)
+        """
+        if self.eln_data is None:
+            return None
+
+        # Use the path to get the eln_data (this refers to the 2. case)
+        if len(path) > 0:
+            return self.eln_data.get(path)
+
+        # If no path is assigned, use directly the given key to extract
+        # the eln data/value (this refers to the 1. case)
+
+        # Filtering list, for NeXus concepts which use mixed notation of
+        # upper and lowercase to ensure correct NXclass labeling.
+        upper_and_lower_mixed_nexus_concepts = ["/detector_TYPE[",
+                                        "/beam_TYPE[",
+                                        "/source_TYPE[",
+                                        "/polfilter_TYPE[",
+                                        "/spectral_filter_TYPE[",
+                                        "/temp_control_TYPE[",
+                                        "/software_TYPE[",
+                                        "/LENS_OPT["
+
+        ]
+        if self.eln_data.get(key) is None:
+            # filter for mixed concept names
+            for string in upper_and_lower_mixed_nexus_concepts:
+                key = key.replace(string,"/[")
+            # add only characters, if they are lower case and if they are not "[" or "]"
+            result = ''.join([char for char in key if not (char.isupper() or char in '[]')])
+            # Filter as well for
+            result = result.replace("entry",f"ENTRY[{self.callbacks.entry_name}]")
+
+            if self.eln_data.get(result) is not None:
+                return self.eln_data.get(result)
+            else:
+                logger.warning(f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'.")
+        return self.eln_data.get(key)
+
+
+    def get_data(self, key: str, path: str) -> Any:
+        """
+        Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
+        """
+
+        value = self.raman_data.get(path)
+
+        # to calculate Raman shift for Witec Alpha from eln data
+        #if key == "/ENTRY[entry]/DATA[data]/x_values_raman":
+        #    witec_laser_wavelength = self.eln_data.get("/ENTRY[entry]/instrument/beam_incident/wavelength")
+        #    return None
+
+        if value is not None:
+            try:
+                return float(value)
+            except:
+                return self.raman_data.get(path)
+        else:
+            logger.warning(f"No axis name corresponding to the path {path}.")
+
+
+
 READER = RamanReader
 
-# pynxtools will call:
-# data = data_reader().read(template=Template(template), file_paths=input_file, **kwargs)

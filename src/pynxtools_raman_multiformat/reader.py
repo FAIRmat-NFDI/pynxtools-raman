@@ -17,16 +17,26 @@
 """An example reader implementation based on the MultiFormatReader."""
 
 import logging
+import datetime
 from typing import Dict, Any
-import h5py
-import numpy as np
+from pathlib import Path
+from typing import Any, Dict, List, Tuple #Optional, Set, Union
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
+
+from pynxtools_raman_multiformat.rod.rod_reader import RodParser
+from pynxtools_raman_multiformat.witec.witec_reader import post_process_witec
+from pynxtools_raman_multiformat.witec.witec_reader import parse_txt_file
+
+
+
 logger = logging.getLogger("pynxtools")
 
 CONVERT_DICT = {}
+
+REPLACE_NESTED: Dict[str, str] = {}
 
 
 class RamanReaderMulti(MultiFormatReader):
@@ -34,17 +44,30 @@ class RamanReaderMulti(MultiFormatReader):
 
     supported_nxdls = ["NXraman"]
 
+    reader_dir = Path(__file__).parent
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.txt_data: Dict[str, Any] = {}
+
+        self.raman_data_dicts: List[Dict[str, Any]] = []
+        self.raman_data: Dict[str, Any] = {}
+        self.eln_data: Dict[str, Any] = {}
+
+
+
+
+        self.meta_data_length = None
 
         self.extensions = {
             ".yml": self.handle_eln_file,
             ".yaml": self.handle_eln_file,
             ".txt": self.handle_txt_file,
-            ".json": self.set_config_file}
+            ".json": self.set_config_file,
+            ".rod": self.handle_rod_file}
 
-        self.txt_line_skips = None
+        #only required if multiple file types are present
+        #for ext in RamanReaderMulti.__prmt_file_ext__:
+        #    self.extensions[ext] = self.handle_data_file
 
     def set_config_file(self, file_path: str) -> Dict[str, Any]:
         if self.config_file is not None:
@@ -60,87 +83,82 @@ class RamanReaderMulti(MultiFormatReader):
             convert_dict=CONVERT_DICT,
             parent_key="/ENTRY[entry]",
         )
-        #self.txt_line_skips = self.eln_data.get('/ENTRY[entry]/skip')
 
-        return {}
-
-    def handle_txt_file(self, filepath) -> Dict[str, Any]:
-        self.read_txt_file(filepath)
         return {}
 
     def get_attr(self, key: str, path: str) -> Any:
         """
-        Get the metadata that was stored in the main(=data) file.
+        Get the metadata that was stored in the main file.
         """
+        return self.get_metadata(self.raman_data, path, self.callbacks.entry_name)
 
-        if self.txt_data is None:
-            return None
-        return self.txt_data.get(path)
+    def read(
+        self,
+        template: dict = None,
+        file_paths: Tuple[str] = None,
+        objects: Tuple[Any] = None,
+        **kwargs,
+    ) -> dict:
+        template = super().read(template, file_paths, objects, suppress_warning=True)
+        #set default data
 
-    def read_txt_file(self, filepath):
+        template["/@default"] = "entry"
+
+        return template
+
+
+    def handle_rod_file(self, filepath) -> Dict[str, Any]:
+        #specify default config file for rod files
+        reader_dir = Path(__file__).parent
+        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")
+
+
+        rod = RodParser()
+        # read the rod file
+        rod.get_cif_file_content(filepath)
+        # get the key and value pairs from the rod file
+        self.raman_data = rod.extract_keys_and_values_from_cif()
+        self.meta_data_length = len(self.raman_data)
+        # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
+        key_to_make_value_lower_case = "_raman_measurement.environment"
+        self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(key_to_make_value_lower_case).lower()
+
+
+        # transform the string into a datetime object
+        time_key = '_raman_measurement.datetime_initiated'
+        date_time_str = self.raman_data.get(time_key)
+        date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
+        # assume UTC for .rod data, as this is not specified in detail
+        tzinfo = datetime.timezone.utc
+        if isinstance(date_time_obj, datetime.datetime):
+
+            if tzinfo is not None:
+                # Apply the specified timezone to the datetime object
+                date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
+
+            #assign the dictionary the corrrected date format
+            self.raman_data[time_key] = date_time_obj.isoformat()
+
+        # remove capitalization
+        objective_type_key = '_raman_measurement_device.optics_type'
+        self.raman_data[objective_type_key] = self.raman_data.get(objective_type_key).lower()
+        # set a valid raman NXDL value, but only if it matches one of the correct ones:
+        objective_type_list = ['objective', 'lens', 'glass fiber', 'none']
+        if self.raman_data.get(objective_type_key) not in objective_type_list:
+            self.raman_data[objective_type_key] = 'other'
+
+        return {}
+
+
+    def handle_txt_file(self, filepath):
         """
         Read a .txt file from Witec Alpha Raman spectrometer and save the header and measurement data.
         """
-        with open(filepath, "r") as file:
-            lines = file.readlines()
 
-        # Initialize dictionaries to hold header and data sections
-        header_dict = {}
-        data = []
-        line_count = 0
-        data_mini_header_length = None
+        self.raman_data = parse_txt_file(self, filepath)
+        self.post_process = post_process_witec.__get__(self, RamanReaderMulti)
 
-        # Track current section
-        current_section = None
-
-        for line in lines:
-            line_count += 1
-            # Remove any leading/trailing whitespace
-            line = line.strip()
-            # Go through the lines and define two different regions "Header" and
-            # "Data", as these need different methods to extract the data.
-            if line.startswith("[Header]"):
-                current_section = "header"
-                continue
-            elif line.startswith("[Data]"):
-                data_mini_header_length = line_count + 2
-                current_section = "data"
-
-                continue
-
-            # Parse the header section
-            if current_section == "header" and "=" in line:
-                key, value = line.split("=", 1)
-                header_dict[key.strip()] = value.strip()
-
-            # Parse the data section
-            elif current_section == "data" and "," in line:
-                # The header is set excactly until the float-like column data starts
-                # Rework this later to extract full metadata
-                if line_count <= data_mini_header_length:
-                    if line.startswith("[Header]"):
-                        logger.info(
-                            f"[Header] elements in the file {filepath}, are not parsed yet. Consider adden the respective functionality."
-                        )
-                if line_count > data_mini_header_length:
-                    values = line.split(",")
-                    data.append([float(values[0].strip()), float(values[1].strip())])
-
-        # Transform: [[A, B], [C, D], [E, F]] into [[A, C, E], [B, D, F]]
-        data = [list(item) for item in zip(*data)]
-
-        #transform linewise read data to colum style data
-        data = np.transpose(data)
-
-        # assign column data with keys
-        data_dict = {
-            "data/x_values": data[:, 0],
-            "data/y_values": data[:, 1]
-        }
-
-        self.txt_data = data_dict
-        self.txt_header = header_dict
-
+        return {}
 
     def get_eln_data(self, key: str, path: str) -> Any:
         """
@@ -154,7 +172,7 @@ class RamanReaderMulti(MultiFormatReader):
         """
         if self.eln_data is None:
             return None
-        
+
         # Use the path to get the eln_data (this refers to the 2. case)
         if len(path) > 0:
             return self.eln_data.get(path)
@@ -189,44 +207,28 @@ class RamanReaderMulti(MultiFormatReader):
                 logger.warning(f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'.")
         return self.eln_data.get(key)
 
+
     def get_data(self, key: str, path: str) -> Any:
-        """Returns measurement data from the given eln_data entry."""
-        if path.endswith(("x_values", "y_values","x_values_raman")):
-            return self.txt_data.get(f"data/{path}")
+        """
+        Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
+        """
+
+        value = self.raman_data.get(path)
+
+        # to calculate Raman shift for Witec Alpha from eln data
+        #if key == "/ENTRY[entry]/DATA[data]/x_values_raman":
+        #    witec_laser_wavelength = self.eln_data.get("/ENTRY[entry]/instrument/beam_incident/wavelength")
+        #    return None
+
+        if value is not None:
+            try:
+                return float(value)
+            except:
+                return self.raman_data.get(path)
         else:
             logger.warning(f"No axis name corresponding to the path {path}.")
 
 
-    def post_process(self) -> None:
-        """
-        Post process the Raman data to add the Raman Shift from input laser wavelength and
-        data wavelengths.
-        """
-
-        def transform_nm_to_wavenumber(self, lambda_laser, lambda_measurement):
-            stokes_raman_shift = -(1e7 / lambda_measurement - 1e7 / lambda_laser)
-            return stokes_raman_shift
-
-        def get_incident_wavelength_from_NXraman(self):
-            substring = "/beam_incident/wavelength"
-
-            # Find matching keys with contain this substring
-            wavelength_keys = [key for key in self.eln_data if substring in key]
-            # Filter the matching keys for the strings, which contain this substring at the end only
-            filtered_list = [string for string in wavelength_keys if string.endswith(substring)]
-            # get the laser wavelength
-            laser_wavelength = self.eln_data.get(filtered_list[0])
-            return laser_wavelength
-
-        laser_wavelength = get_incident_wavelength_from_NXraman(self)
-        x_values_raman = transform_nm_to_wavenumber(self, laser_wavelength, self.txt_data["data/x_values"])
-
-        self.txt_data["data/x_values_raman"] = x_values_raman
 
 READER = RamanReaderMulti
 
-# Use this command in this .py file folder:
-# dataconverter eln_data.yaml Si-wafer-Raman-Spectrum-1.txt  -c config_file.json --reader raman_multi --nxdl NXraman --output output_raman.nxs
-#
-# Remaining Warnings
-# WARNING: Missing attribute: "/ENTRY[entry]/definition/@URL"

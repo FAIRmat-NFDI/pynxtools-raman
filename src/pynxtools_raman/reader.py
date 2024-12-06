@@ -104,7 +104,7 @@ class RamanReader(MultiFormatReader):
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
         # specify default config file for rod files
         reader_dir = Path(__file__).parent
-        self.config_file: reader_dir.joinpath("config", "config_file_rod.json") # pylint: disable=invalid-type-comment
+        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")  # pylint: disable=invalid-type-comment
 
         rod = RodParser()
         # read the rod file

@@ -55,10 +55,8 @@ class RamanReaderMulti(MultiFormatReader):
 
 
 
-        self.reader_type: str = {}
-        self.txt_line_skips = None
-        self.data_file_path = ""
-        self.sub_reader_name = None
+
+        self.meta_data_length = None
 
         self.extensions = {
             ".yml": self.handle_eln_file,
@@ -120,7 +118,7 @@ class RamanReaderMulti(MultiFormatReader):
         rod.get_cif_file_content(filepath)
         # get the key and value pairs from the rod file
         self.raman_data = rod.extract_keys_and_values_from_cif()
-
+        self.meta_data_length = len(self.raman_data)
         # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
         key_to_make_value_lower_case = "_raman_measurement.environment"
         self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(key_to_make_value_lower_case).lower()
@@ -128,10 +126,26 @@ class RamanReaderMulti(MultiFormatReader):
 
         # transform the string into a datetime object
         time_key = '_raman_measurement.datetime_initiated'
-        date_str = self.raman_data.get(time_key)
-        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        if isinstance(date_obj, datetime.datetime):
-            self.raman_data[time_key] = date_obj.isoformat()
+        date_time_str = self.raman_data.get(time_key)
+        date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
+        # assume UTC for .rod data, as this is not specified in detail
+        tzinfo = datetime.timezone.utc
+        if isinstance(date_time_obj, datetime.datetime):
+
+            if tzinfo is not None:
+                # Apply the specified timezone to the datetime object
+                date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
+
+            #assign the dictionary the corrrected date format
+            self.raman_data[time_key] = date_time_obj.isoformat()
+
+        # remove capitalization
+        objective_type_key = '_raman_measurement_device.optics_type'
+        self.raman_data[objective_type_key] = self.raman_data.get(objective_type_key).lower()
+        # set a valid raman NXDL value, but only if it matches one of the correct ones:
+        objective_type_list = ['objective', 'lens', 'glass fiber', 'none']
+        if self.raman_data.get(objective_type_key) not in objective_type_list:
+            self.raman_data[objective_type_key] = 'other'
 
         return {}
 

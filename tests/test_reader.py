@@ -30,7 +30,7 @@ def test_nexus_conversion(caplog, tmp_path):
 @pytest.mark.parametrize(
     "data_dir, caplog_level",
     [
-        ("rod", "ERROR"),
+        ("rod", "WARNING"),
         ("witec", "WARNING"),
     ],
 )

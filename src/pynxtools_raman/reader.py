@@ -223,7 +223,7 @@ class RamanReader(MultiFormatReader):
         if value is not None:
             try:
                 return float(value)
-            except:
+            except (ValueError, TypeError):
                 return self.raman_data.get(path)
         else:
             logger.warning(f"No axis name corresponding to the path {path}.")

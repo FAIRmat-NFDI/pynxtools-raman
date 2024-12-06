@@ -9,22 +9,6 @@ from pathlib import Path
 
 from pynxtools.testing.nexus_conversion import ReaderTest
 
-if False: # remove later, if multiformat entry point is removed
-    def test_nexus_conversion(caplog, tmp_path):
-        """
-        Tests the conversion into nexus.
-        """
-        caplog.clear()
-        dir_path = Path(__file__).parent / "data"
-        test = ReaderTest(
-            nxdl="NXraman",
-            reader_name="raman",
-            files_or_dir=glob(os.path.join(dir_path, "*")),
-            tmp_path=tmp_path,
-            caplog=caplog,
-        )
-        test.convert_to_nexus(caplog_level="WARNING", ignore_undocumented=False)
-        test.check_reproducibility_of_nexus()
 
 
 @pytest.mark.parametrize(
@@ -39,10 +23,10 @@ def test_nexus_conversion_multi(data_dir, caplog_level, tmp_path, caplog):
     Tests the conversion into nexus.
     """
     caplog.clear()
-    dir_path_multi = Path(__file__).parent / f"data_multi/{data_dir}"
+    dir_path_multi = Path(__file__).parent / f"data/{data_dir}"
     test = ReaderTest(
         nxdl="NXraman",
-        reader_name="raman_multi",
+        reader_name="raman",
         files_or_dir=glob(os.path.join(dir_path_multi, "*")),
         tmp_path=tmp_path,
         caplog=caplog,

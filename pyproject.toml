@@ -28,7 +28,6 @@ dependencies = [
 
 [project.entry-points."pynxtools.reader"]
 raman = "pynxtools_raman.reader:RamanReader"
-raman_multi = "pynxtools_raman_multiformat.reader:RamanReaderMulti"
 
 
 [project.urls]

@@ -6,6 +6,7 @@
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/average_power/@units": "mW",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/extent": "@data:_raman_measurement_device.spot_size",
   "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/extent/@units": "µm",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/parameter_reliability":"nominal",
   "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/count_time/@units": "s",
   "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/count_time": "@data:_raman_measurement.integration_time",
   "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/detector_channel_type":"single-channel",

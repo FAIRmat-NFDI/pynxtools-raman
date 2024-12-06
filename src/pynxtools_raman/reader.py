@@ -43,17 +43,13 @@ class RamanReader(MultiFormatReader):
 
     supported_nxdls = ["NXraman"]
 
-    reader_dir = Path(__file__).parent
-    config_file: Optional[Union[str, Path]] = reader_dir.joinpath(
-        "config", "template.json"
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.raman_data_dicts: List[Dict[str, Any]] = []
         self.raman_data: Dict[str, Any] = {}
         self.eln_data: Dict[str, Any] = {}
+        self.config_file: Path
 
         self.meta_data_length = None
 
@@ -69,7 +65,7 @@ class RamanReader(MultiFormatReader):
         # for ext in RamanReader.__prmt_file_ext__:
         #    self.extensions[ext] = self.handle_data_file
 
-    def set_config_file(self, file_path: str) -> Dict[str, Any]:
+    def set_config_file(self, file_path: Path) -> Dict[str, Any]:
         if self.config_file is not None:
             logger.info(
                 f"Config file already set. Replaced by the new file {file_path}."
@@ -109,7 +105,7 @@ class RamanReader(MultiFormatReader):
     def handle_rod_file(self, filepath) -> Dict[str, Any]:
         # specify default config file for rod files
         reader_dir = Path(__file__).parent
-        self.config_file: reader_dir.joinpath("config", "config_file_rod.json")  # pylint: disable=invalid-type-comment
+        self.config_file = reader_dir.joinpath("config", "config_file_rod.json")  # pylint: disable=invalid-type-comment
 
         rod = RodParser()
         # read the rod file

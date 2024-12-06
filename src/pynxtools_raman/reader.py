@@ -43,6 +43,11 @@ class RamanReader(MultiFormatReader):
 
     supported_nxdls = ["NXraman"]
 
+    reader_dir = Path(__file__).parent
+    config_file: Optional[Union[str, Path]] = reader_dir.joinpath(
+        "config", "template.json"
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -22,7 +22,7 @@ def test_nexus_conversion(caplog, tmp_path):
         tmp_path=tmp_path,
         caplog=caplog,
     )
-    test.convert_to_nexus(caplog_level="WARNING", ignore_undocumented=False)
+    test.convert_to_nexus(caplog_level="WARNING", ignore_undocumented=True)
     test.check_reproducibility_of_nexus()
 
     caplog.clear()
@@ -34,5 +34,5 @@ def test_nexus_conversion(caplog, tmp_path):
         tmp_path=tmp_path,
         caplog=caplog,
     )
-    test.convert_to_nexus(caplog_level="WARNING", ignore_undocumented=False)
+    test.convert_to_nexus(caplog_level="WARNING", ignore_undocumented=True)
     test.check_reproducibility_of_nexus()

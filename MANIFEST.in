@@ -1,4 +1,4 @@
 prune *
 exclude *
-recursive-include src/pynxtools_raman *.py
+recursive-include src/pynxtools_raman *.py *.json
 include pyproject.toml README.md dev-requirements.txt

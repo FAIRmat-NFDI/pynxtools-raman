@@ -49,6 +49,14 @@ docs = [
     "mkdocs-macros-plugin",
 ]
 
+[tool.setuptools.packages.find]
+where = [
+    "src",
+]
+
+[tool.setuptools.package-data]
+pynxtools_raman = ["*.json"]
+
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
 local_scheme = "node-and-date"

@@ -22,17 +22,21 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pynxtools>=0.7.0"
+    "pynxtools>=0.7.0",
+    "gemmi>=0.6.7"
 ]
 
 [project.entry-points."pynxtools.reader"]
 raman = "pynxtools_raman.reader:RamanReader"
-raman_multi = "pynxtools_raman_multiformat.reader:RamanReaderMulti"
 
 [tool.setuptools.packages.find]
 where = [
     "src",
 ]
+
+[tool.setuptools.package-data]
+pynxtools_raman = ["*.json"]
+
 
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/pynxtools-raman"

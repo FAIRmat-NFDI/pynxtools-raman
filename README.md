@@ -47,6 +47,19 @@ You see 3 Folders:
 - tests: contains a test procedure and files, which are required for software development
 - src/pynxtools_raman: contains the source files, which contain the sub-reader function for Raman experiments. This only works in combination with the Python package [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools). This contains the [Multiformat Reader](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html) and the respective sub-reader functions for WITec or Raman Open Database. This also contains the config.json files in src/pynxtools_raman/config, which are necessary to map the data via the Multiformat Reader, by as well allowing individual adjustments. In this way each laboratory is able to map the data via the same reader, while each laboratory has its own individual electronic lab notebook structure.
 
+Consider setting up an invididual python environment, to seperate the python fuctnionalities of this package from the python funtionalities of your operating system:
+For Ubuntu-based systems:
+```shell
+python -m venv .pyenv
+source .pyenv/bin/activate
+```
+Verify it with:
+```shell
+which python
+```
+It should point to the python folder, you created above with the name `.pyenv`.
+
+
 Install the python package:
 ```shell
 pip install .

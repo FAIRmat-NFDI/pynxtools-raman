@@ -29,12 +29,9 @@ This reader plugin for [`pynxtools`](https://github.com/FAIRmat-NFDI/pynxtools) 
 within the field of raman into a standardized representation using the
 [NeXus](https://www.nexusformat.org/) application definition [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html#nxraman).
 
-## Docs
-Extensive documentation of this pynxtools plugin is available [here](https://fairmat-nfdi.github.io/pynxtools-raman/). You can find information about getting started, how-to guides, the supported file formats, how to get involved, and much more there.
-
 
 ## Step-by-Step Example
-Download(clone) the repository via git:
+Download the repository via git clone:
 ```shell
 git clone https://github.com/FAIRmat-NFDI/pynxtools-raman.git
 ```
@@ -45,7 +42,7 @@ cd pynxtools-raman
 You see 3 Folders:
 - examples: contains example datasets, to show how the data conversion is done (currently 1 example from WITec and 1 example from the Raman Open Database)
 - tests: contains a test procedure and files, which are required for software development
-- src/pynxtools_raman: contains the source files, which contain the sub-reader function for Raman experiments. This only works in combination with the Python package [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools). This contains the [Multiformat Reader](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html) and the respective sub-reader functions for WITec or Raman Open Database. This also contains the config.json files in src/pynxtools_raman/config, which are necessary to map the data via the Multiformat Reader, by as well allowing individual adjustments. In this way each laboratory is able to map the data via the same reader, while each laboratory has its own individual electronic lab notebook structure.
+- src/pynxtools_raman: contains the source files, which contain the sub-reader function for Raman experiments. This only works in combination with the Python package [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools). This contains the [Multiformat Reader](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html) and the respective sub-reader functions for WITec or the Raman Open Database. This also contains the config.json files in src/pynxtools_raman/config, which are necessary to map the data via the Multiformat Reader, by as well allowing individual adjustments. In this way each laboratory is able to map the data via the same reader, while each laboratory has its own individual electronic lab notebook structure.
 
 Consider setting up an invididual python environment, to seperate the python fuctnionalities of this package from the python funtionalities of your operating system:
 For Ubuntu-based systems:
@@ -53,7 +50,7 @@ For Ubuntu-based systems:
 python -m venv .pyenv
 source .pyenv/bin/activate
 ```
-Verify it with:
+Verify its location via:
 ```shell
 which python
 ```
@@ -76,11 +73,11 @@ dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/con
 ```
 
 **For Example for the Raman Open Database command:**
-- You assign the reader name via `--reader raman`
-- You assign the NeXus definition language (nxdl) via `--nxdl NXraman`
-- You specify the name and path of the output file via `--output new_rod_example_neuxs.nxs`
-- You assign an individualized config file via `src/pynxtools_raman/config/config_file_rod.json`. The config file is detected by its extension `.json`
-- You give the file, which includes the meta and measurement data via `examples/database/rod/rod_file_1000679.rod`. The parser is specified to detect the `.rod` file, and handle the content appropriately
+- You assign the reader name via `--reader raman`.
+- You assign the NeXus definition language (nxdl) via `--nxdl NXraman`.
+- You specify the name and path of the output file via `--output new_rod_example_neuxs.nxs`.
+- You assign an individualized config file via `src/pynxtools_raman/config/config_file_rod.json`. The config file is detected by its extension `.json`.
+- You give the file, which includes the meta and measurement data via `examples/database/rod/rod_file_1000679.rod`. The parser is specified to detect the `.rod` file, and handle the content appropriately.
 
 Then you can inspect the generated file at [this website](https://h5web.panosc.eu/h5wasm) or in VScode via the extension "H5web".
 

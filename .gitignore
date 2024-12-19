@@ -199,6 +199,7 @@ cython_debug/
 .pyenv
 *.pyc
 *.txt
+!src/download_rod_files/*.txt
 !tests/data/witec/*.txt
 !examples/witec/txt/*.txt
 !requirements.txt

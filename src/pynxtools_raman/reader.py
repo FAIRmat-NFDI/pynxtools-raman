@@ -22,12 +22,14 @@ import datetime
 from typing import Dict, Any
 from pathlib import Path
 from typing import Any, Dict, List, Tuple  # Optional, Union, Set
+import re
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
 
 from pynxtools_raman.rod.rod_reader import RodParser
+from pynxtools_raman.rod.rod_reader import post_process_rod
 from pynxtools_raman.witec.witec_reader import post_process_witec
 from pynxtools_raman.witec.witec_reader import parse_txt_file
 
@@ -90,37 +92,89 @@ class RamanReader(MultiFormatReader):
         # get the key and value pairs from the rod file
         self.raman_data = rod.extract_keys_and_values_from_cif()
 
+        if self.raman_data.get("_raman_theoretical_spectrum.intensity"):
+            logger.warning(
+                f"Theoretical Raman Data .rod file found. File parsing aborted."
+            )
+            # prevent file parsing to setting an invalid config file name.
+            self.config_file = Path()
+
+        # unit_cell_alphabetagamma
+        # replace the [ and ] to avoid confliucts in processing with pynxtools NXclass assignments
+        self.raman_data = {
+            key.replace("_[local]_", "_local_"): value
+            for key, value in self.raman_data.items()
+        }
+
         self.missing_meta_data = copy.deepcopy(self.raman_data)
+
+        if self.raman_data.get("_cod_database_code") is not None or "":
+            self.raman_data["COD_service_name"] = "Crystallography Open Database"
+            del self.missing_meta_data["_cod_database_code"]
+
+        if self.raman_data.get("_cell_length_a") is not None or "":
+            # transform 9.40(3) to 9.40
+            length_a = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_a"))
+            length_b = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_b"))
+            length_c = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_c"))
+            self.raman_data["rod_unit_cell_length_abc"] = [
+                float(length_a),
+                float(length_b),
+                float(length_c),
+            ]
+            del self.missing_meta_data["_cell_length_a"]
+            del self.missing_meta_data["_cell_length_b"]
+            del self.missing_meta_data["_cell_length_c"]
+        if self.raman_data.get("_cell_angle_alpha") is not None or "":
+            # transform 9.40(3) to 9.40
+            angle_alpha = re.sub(
+                r"\(\d+\)", "", self.raman_data.get("_cell_angle_alpha")
+            )
+            angle_beta = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_angle_beta"))
+            angle_gamma = re.sub(
+                r"\(\d+\)", "", self.raman_data.get("_cell_angle_gamma")
+            )
+            self.raman_data["rod_unit_cell_angles_alphabetagamma"] = [
+                float(angle_alpha),
+                float(angle_beta),
+                float(angle_gamma),
+            ]
+            del self.missing_meta_data["_cell_angle_alpha"]
+            del self.missing_meta_data["_cell_angle_beta"]
+            del self.missing_meta_data["_cell_angle_gamma"]
 
         # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
         key_to_make_value_lower_case = "_raman_measurement.environment"
-        self.raman_data[key_to_make_value_lower_case] = self.raman_data.get(
-            key_to_make_value_lower_case
-        ).lower()
+        environment_name_str = self.raman_data.get(key_to_make_value_lower_case)
+        if environment_name_str is not None:
+            self.raman_data[key_to_make_value_lower_case] = environment_name_str.lower()
 
         # transform the string into a datetime object
         time_key = "_raman_measurement.datetime_initiated"
         date_time_str = self.raman_data.get(time_key)
-        date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
-        # assume UTC for .rod data, as this is not specified in detail
-        tzinfo = datetime.timezone.utc
-        if isinstance(date_time_obj, datetime.datetime):
-            if tzinfo is not None:
-                # Apply the specified timezone to the datetime object
-                date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
+        if date_time_str is not None:
+            date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
+            # assume UTC for .rod data, as this is not specified in detail
+            tzinfo = datetime.timezone.utc
+            if isinstance(date_time_obj, datetime.datetime):
+                if tzinfo is not None:
+                    # Apply the specified timezone to the datetime object
+                    date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
 
-            # assign the dictionary the corrrected date format
-            self.raman_data[time_key] = date_time_obj.isoformat()
+                # assign the dictionary the corrrected date format
+                self.raman_data[time_key] = date_time_obj.isoformat()
 
         # remove capitalization
         objective_type_key = "_raman_measurement_device.optics_type"
-        self.raman_data[objective_type_key] = self.raman_data.get(
-            objective_type_key
-        ).lower()
-        # set a valid raman NXDL value, but only if it matches one of the correct ones:
-        objective_type_list = ["objective", "lens", "glass fiber", "none"]
-        if self.raman_data.get(objective_type_key) not in objective_type_list:
-            self.raman_data[objective_type_key] = "other"
+        objective_type_str = self.raman_data.get(objective_type_key)
+        if objective_type_str is not None:
+            self.raman_data[objective_type_key] = objective_type_str.lower()
+            # set a valid raman NXDL value, but only if it matches one of the correct ones:
+            objective_type_list = ["objective", "lens", "glass fiber", "none"]
+            if self.raman_data.get(objective_type_key) not in objective_type_list:
+                self.raman_data[objective_type_key] = "other"
+
+        self.post_process = post_process_rod.__get__(self, RamanReader)
 
         return {}
 
@@ -198,8 +252,14 @@ class RamanReader(MultiFormatReader):
 
         # this filters out the meta data, which is up to now only created for .rod files
 
+        if (path is None or path is "") and key is not None:
+            return self.raman_data.get(key)
+
         if self.missing_meta_data:
-            del self.missing_meta_data[path]
+            # this if condition is required, to only delete keys which are abaialble by the data.
+            # e.g. is defined to extract it via config.json, but there is no value in meta data
+            if path in self.missing_meta_data.keys():
+                del self.missing_meta_data[path]
 
         if value is not None:
             try:

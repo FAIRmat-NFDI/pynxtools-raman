@@ -23,11 +23,16 @@ classifiers = [
 ]
 dependencies = [
     "pynxtools>=0.7.0",
-    "gemmi>=0.6.7"
+    "gemmi>=0.6.7",
+    "requests>=2.32.3",
 ]
 
 [project.entry-points."pynxtools.reader"]
 raman = "pynxtools_raman.reader:RamanReader"
+
+
+[project.scripts]
+download_rod_file = "pynxtools_raman.rod.rod_get_file:trigger_rod_download"
 
 [tool.setuptools.packages.find]
 where = [

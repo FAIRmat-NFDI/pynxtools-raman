@@ -1,0 +1,28 @@
+{
+  "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength": "@data:Raman laser wavelength",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength/@units": "@data:Raman laser wavelength_unit",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/parameter_reliability":"nominal",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/count_time/@units": "@data:Collection length_unit",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/count_time": "@data:Collection length",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/detector_channel_type":"multichannel",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/DATA[bkg_scan_number]":"@data:Number of background scans",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/DATA[sample_scan_number]":"@data:Number of sample scans",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/FABRICATION[device_information]/vendor":"Thermo Fisher Scientific",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/FABRICATION[device_information]/model": "@data:##SPECTROMETER/DATA SYSTEM",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/software_TYPE[software_jdx_processing]/program": "@data:##JCAMP-DX",
+  "/ENTRY[entry]/definition/@url": "Remove_this_if_pynxtools_issue_#469_is_solved",
+  "/ENTRY[entry]/experiment_type": "Raman spectroscopy",
+  "/ENTRY[entry]/raman_experiment_type": "other",
+  "/ENTRY[entry]/title": "@data:##TITLE",
+  "/ENTRY[entry]/start_time": "@data:##LONGDATE_AND_TIME",
+  "/ENTRY[entry]/@default": "data",
+  "/ENTRY[entry]/DATA[data]/@signal": "y_values",
+  "/ENTRY[entry]/DATA[data]/y_values": "@data:data_y_averaged_scaled",
+  "/ENTRY[entry]/DATA[data]/y_values/@units": "@data:##YUNITS",
+  "/ENTRY[entry]/DATA[data]/y_values/@long_name": "@data:##YUNITS",
+  "/ENTRY[entry]/DATA[data]/@axes":"x_values_raman",
+  "/ENTRY[entry]/DATA[data]/x_values_raman/@long_name": "@data:##XUNITS",
+  "/ENTRY[entry]/DATA[data]/x_values_raman": "@data:data_x",
+  "/ENTRY[entry]/DATA[data]/x_values_raman/@units": "@data:##XUNITS"
+  }
+

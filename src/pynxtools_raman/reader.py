@@ -30,7 +30,7 @@ from pynxtools.dataconverter.readers.utils import parse_yml
 from pynxtools_raman.rod.rod_reader import RodParser
 from pynxtools_raman.witec.witec_reader import post_process_witec
 from pynxtools_raman.witec.witec_reader import parse_txt_file
-
+from pynxtools_raman.thermo_fischer.thermo_fischer_reader import parse_jdx_file
 
 logger = logging.getLogger("pynxtools")
 
@@ -80,75 +80,14 @@ class RamanReader(MultiFormatReader):
 
         return {}
 
-
-    def parse_jdx_file(self, filepath):
-        """
-        Read a .txt file from Witec Alpha Raman spectrometer and return a data dictionary
-        which contains Raman shift and Intensity
-        """
-        data_dict = {}
-
-        with open(filepath, "r") as file:
-            data = file.readlines()
-
-        # Separate metadata and measurement data
-        jdx_metadata = []
-        jdx_measurement_data = []
-        is_measurement = False
-
-        for line in data:
-            if line.startswith("##XYDATA"):
-                is_measurement = True
-            elif line.startswith("##END"):
-                is_measurement = False
-            elif not is_measurement:
-                jdx_metadata.append(line.replace("\n",""))
-            else:
-                jdx_measurement_data.append(line.replace("\n",""))
-
-        # extract float like measruement data colums:
-        jdx_data_list = []
-
-        for line in jdx_measurement_data:
-            string_list = line.split()
-            float_list = [float(item) for item in string_list]
-            jdx_data_list.append(float_list)
-
-        # Transform: [[A, B], [C, D], [E, F]] into [[A, C, E], [B, D, F]]
-        jdx_data_list = [list(item) for item in zip(*jdx_data_list)]
-
-        column_counter = 0
-        for column in jdx_data_list:
-            if column_counter == 0:
-                data_dict["data_x"] = column
-            if column_counter > 0:
-                data_dict[f"data_y_{column_counter}"] = column
-            column_counter = column_counter + 1
-
-        # extract key value pair from meta data:
-        for i in range(len(jdx_metadata)):
-            # Metadata, always starts with ##
-            if jdx_metadata[i].startswith("##"):
-                key, value = jdx_metadata[i].split("=")
-                data_dict[key] = value
-            # this covers multi-line meta data such as comments or similar. This
-            # is appended to a list and then added to the dictionary
-            else:
-                if key in data_dict and isinstance(data_dict[key], list):
-                    data_dict[key].append(jdx_metadata[i])
-                else:
-                    data_dict[key] = [jdx_metadata[i]]
-
-        return data_dict
-
-
     def handle_jdx_file(self, filepath) -> Dict[str, Any]:
-
         reader_dir = Path(__file__).parent
-        self.config_file = reader_dir.joinpath("config", "config_file_thermo_fischer.json")  # pylint: disable=invalid-type-comment
+        self.config_file = reader_dir.joinpath(
+            "config", "config_file_thermo_fischer.json"
+        )  # pylint: disable=invalid-type-comment
 
-        self.raman_data = self.parse_jdx_file(filepath)
-        print(self.raman_data)
+        self.raman_data = parse_jdx_file(filepath)
+        # print(self.raman_data)
         return {}
 
     def handle_rod_file(self, filepath) -> Dict[str, Any]:

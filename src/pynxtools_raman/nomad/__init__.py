@@ -1,7 +1,5 @@
 try:
-    from nomad.config.models.plugins import (
-        AppEntryPoint,
-    )
+    from nomad.config.models.plugins import AppEntryPoint
 except ImportError as exc:
     raise ImportError(
         "Could not import nomad package. Please install the package 'nomad-lab'."
@@ -84,7 +82,8 @@ raman_app = AppEntryPoint(
         # results to the wanted subset. Any available search filter can be
         # targeted here. This example makes sure that only entries that use
         # MySchema are included.
-        filters_locked={"section_defs.definition_qualified_name": [schema]},
+        # filters_locked={"section_defs.definition_qualified_name": [schema]},
+        filters_locked={f"data.Raman.ENTRY.definition__field#{schema}": ["NXraman"]},
         # Controls the menu shown on the left
         menu=Menu(
             title="Material",
@@ -121,8 +120,8 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "linear",
-                    "quantity": f"data.Root.datetime#{schema}",
-                    "title": "Procesing Time",
+                    "quantity": f"data.Raman.ENTRY.start_time__field#{schema}",
+                    "title": "Start Time",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 4, "w": 12, "y": 0, "x": 0}
                     },
@@ -131,10 +130,20 @@ raman_app = AppEntryPoint(
                     "type": "terms",
                     "show_input": False,
                     "scale": "linear",
-                    "quantity": f"entry_type",
-                    "title": "Entry Type",
+                    "quantity": f"data.Raman.ENTRY.INSTRUMENT.scattering_configuration__field#{schema}",
+                    "title": "Scattering Config",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 8, "w": 4, "y": 0, "x": 12}
+                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 4, "y": 0, "x": 12}
+                    },
+                },
+                {
+                    "type": "terms",
+                    "show_input": False,
+                    "scale": "linear",
+                    "quantity": f"data.Raman.ENTRY.raman_experiment_type__field#{schema}",
+                    "title": "Raman Type",
+                    "layout": {
+                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 8, "y": 0, "x": 16}
                     },
                 },
                 {
@@ -142,7 +151,7 @@ raman_app = AppEntryPoint(
                     "scale": "linear",
                     "quantity": f"results.material.elements",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 12, "y": 4, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 6, "w": 12, "y": 4, "x": 0}
                     },
                 },
                 {
@@ -154,7 +163,7 @@ raman_app = AppEntryPoint(
                     "quantity": f"data.Raman.ENTRY.SAMPLE.unit_cell_volume__field#{schema}",  # data.Raman.ENTRY.SAMPLE.unit_cell_volume__field#pynxtools.nomad.schema.NeXus
                     "title": "Unit Cell Volume",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 12, "y": 8, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 6, "w": 12, "y": 4, "x": 12}
                     },
                 },
             ]

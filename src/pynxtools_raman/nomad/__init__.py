@@ -15,7 +15,7 @@ from nomad.config.models.ui import (
     SearchQuantities,
 )
 
-schema = "pynxtools.nomad.schema.NeXus"
+schema = "pynxtools.nomad.schema.Root"
 
 raman_app = AppEntryPoint(
     name="RamanApp",
@@ -50,22 +50,22 @@ raman_app = AppEntryPoint(
             # ),
             Column(
                 title="start_time",
-                quantity=f"data.*.ENTRY[*].start_time__field#{schema}",
+                quantity=f"data.ENTRY[*].start_time__field#{schema}",
                 selected=True,
             ),
             Column(
                 title="title",
-                quantity=f"data.*.ENTRY[*].title__field#{schema}",
+                quantity=f"data.ENTRY[*].title__field#{schema}",
                 selected=True,
             ),
             Column(
                 title="scattering_config",
-                quantity=f"data.*.ENTRY[*].INSTRUMENT[*].scattering_configuration__field#{schema}",
+                quantity=f"data.ENTRY[*].INSTRUMENT[*].scattering_configuration__field#{schema}#str",
                 selected=True,
             ),
             Column(
                 title="unit_cell_volume",
-                quantity=f"data.*.ENTRY[*].SAMPLE[*].unit_cell_volume__field#{schema}",
+                quantity=f"data.ENTRY[*].SAMPLE[*].unit_cell_volume__field#{schema}",
                 selected=True,
             ),
             # Only 311 of 1131 ROD entries have this field...
@@ -83,7 +83,7 @@ raman_app = AppEntryPoint(
         # targeted here. This example makes sure that only entries that use
         # MySchema are included.
         # filters_locked={"section_defs.definition_qualified_name": [schema]},
-        filters_locked={f"data.Raman.ENTRY.definition__field#{schema}": ["NXraman"]},
+        filters_locked={f"data.ENTRY.definition__field#{schema}": ["NXraman"]},
         # Controls the menu shown on the left
         menu=Menu(
             title="Material",
@@ -120,7 +120,7 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "linear",
-                    "quantity": f"data.Raman.ENTRY.start_time__field#{schema}",
+                    "quantity": f"data.ENTRY.start_time__field#{schema}",
                     "title": "Start Time",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 4, "w": 12, "y": 0, "x": 0}
@@ -130,7 +130,7 @@ raman_app = AppEntryPoint(
                     "type": "terms",
                     "show_input": False,
                     "scale": "linear",
-                    "quantity": f"data.Raman.ENTRY.INSTRUMENT.scattering_configuration__field#{schema}",
+                    "quantity": f"data.ENTRY.INSTRUMENT.scattering_configuration__field#{schema}#str",
                     "title": "Scattering Config",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 4, "w": 4, "y": 0, "x": 12}
@@ -140,7 +140,7 @@ raman_app = AppEntryPoint(
                     "type": "terms",
                     "show_input": False,
                     "scale": "linear",
-                    "quantity": f"data.Raman.ENTRY.raman_experiment_type__field#{schema}",
+                    "quantity": f"data.ENTRY.raman_experiment_type__field#{schema}#str",
                     "title": "Raman Type",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 4, "w": 8, "y": 0, "x": 16}
@@ -160,7 +160,7 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "linear",
-                    "quantity": f"data.Raman.ENTRY.SAMPLE.unit_cell_volume__field#{schema}",  # data.Raman.ENTRY.SAMPLE.unit_cell_volume__field#pynxtools.nomad.schema.NeXus
+                    "quantity": f"data.ENTRY.SAMPLE.unit_cell_volume__field#{schema}",  # data.Raman.ENTRY.SAMPLE.unit_cell_volume__field#pynxtools.nomad.schema.NeXus
                     "title": "Unit Cell Volume",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 6, "w": 12, "y": 4, "x": 12}

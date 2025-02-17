@@ -170,7 +170,7 @@ def post_process_rod(self) -> None:
     wavelength_nm = float(
         self.raman_data.get("_raman_measurement_device.excitation_laser_wavelength")
     )
-    resolution_invers_cm  = float(
+    resolution_invers_cm = float(
         self.raman_data.get("_raman_measurement_device.resolution")
     )
 

@@ -30,6 +30,9 @@ dependencies = [
 [project.entry-points."pynxtools.reader"]
 raman = "pynxtools_raman.reader:RamanReader"
 
+[project.entry-points.'nomad.plugin']
+#raman_example = "pynxtools_raman.nomad:raman_example"
+raman_app = "pynxtools_raman.nomad:raman_app"
 
 [project.scripts]
 download_rod_file = "pynxtools_raman.rod.rod_get_file:trigger_rod_download"

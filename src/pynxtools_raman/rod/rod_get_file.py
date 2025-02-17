@@ -2,32 +2,36 @@ import argparse
 
 import requests
 
+import logging
+
+logger = logging.getLogger("pynxtools")
+
 rod_id = 1000679
 
 
 def save_rod_file_from_ROD_via_API(rod_id: int):
     url = "https://solsa.crystallography.net/rod/" + str(rod_id) + ".rod"
 
-    print(f"Initialized download of .rod file with ID '{rod_id}' from '{url}'.")
+    logger.info(f"Initialized download of .rod file with ID '{rod_id}' from '{url}'.")
 
     try:
         response = requests.post(url)
         response.raise_for_status()  # Raise HTTP error for bad
 
-        print(f"Successfully received .rod file with ID '{rod_id}'")
+        logger.info(f"Successfully received .rod file with ID '{rod_id}'")
 
         filename = str(rod_id)
 
         with open(filename + ".rod", "w", encoding="utf-8") as file:
             file.write(response.text)
-        print(f"Saved .rod file with ID '{rod_id}' to file '{filename}'")
+        logger.info(f"Saved .rod file with ID '{rod_id}' to file '{filename}'")
 
     except requests.exceptions.ConnectionError as con_err:
-        print(f"ConnectionError occured: {con_err}")
+        logger.error(f"ConnectionError occured: {con_err}")
     except requests.exceptions.HTTPError as http_err:
-        print(f"CHTTPError occured: {http_err}")
+        logger.error(f"CHTTPError occured: {http_err}")
     except requests.exceptions.RequestException as req_exc:
-        print(f"RequestException occured: {req_exc}")
+        logger.error(f"RequestException occured: {req_exc}")
 
 
 def trigger_rod_download():

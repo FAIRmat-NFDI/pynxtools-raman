@@ -130,7 +130,7 @@ class RodParser:
                     value = value.replace("\n", " ")
                 return value.lstrip()  # remove leading space if it is present
             if value.count("\n") == 0:
-                if value[0] == "'":
+                if value.startswith("'"):
                     return value.replace("'", "")
                 return value
         if is_cif_loop_value:  # if block like value via loop_ = [....]
@@ -170,14 +170,14 @@ def post_process_rod(self) -> None:
     wavelength_nm = float(
         self.raman_data.get("_raman_measurement_device.excitation_laser_wavelength")
     )
-    resoltion_invers_cm = float(
+    resolution_invers_cm  = float(
         self.raman_data.get("_raman_measurement_device.resolution")
     )
 
-    if wavelength_nm is not None and resoltion_invers_cm is not None:
+    if wavelength_nm is not None and resolution_invers_cm is not None:
         # assume the resolution is referd to the resolution at the laser wavelength
         wavelength_invers_cm = 1e7 / wavelength_nm
-        resolution_nm = resoltion_invers_cm / wavelength_invers_cm * wavelength_nm
+        resolution_nm = resolution_invers_cm / wavelength_invers_cm * wavelength_nm
 
         # update the data dictionary
         self.raman_data[

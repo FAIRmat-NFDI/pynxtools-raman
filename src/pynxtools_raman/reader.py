@@ -32,7 +32,7 @@ from pynxtools_raman.rod.rod_reader import RodParser
 from pynxtools_raman.rod.rod_reader import post_process_rod
 from pynxtools_raman.witec.witec_reader import post_process_witec
 from pynxtools_raman.witec.witec_reader import parse_txt_file
-
+from pynxtools_raman.thermo_fischer.thermo_fischer_reader import parse_jdx_file
 
 logger = logging.getLogger("pynxtools")
 
@@ -62,6 +62,7 @@ class RamanReader(MultiFormatReader):
             ".txt": self.handle_txt_file,
             ".json": self.set_config_file,
             ".rod": self.handle_rod_file,
+            ".jdx": self.handle_jdx_file,
         }
 
     def set_config_file(self, file_path: Path) -> Dict[str, Any]:
@@ -79,6 +80,16 @@ class RamanReader(MultiFormatReader):
             parent_key="/ENTRY[entry]",
         )
 
+        return {}
+
+    def handle_jdx_file(self, filepath) -> Dict[str, Any]:
+        reader_dir = Path(__file__).parent
+        self.config_file = reader_dir.joinpath(
+            "config", "config_file_thermo_fischer.json"
+        )  # pylint: disable=invalid-type-comment
+
+        self.raman_data = parse_jdx_file(filepath)
+        # print(self.raman_data)
         return {}
 
     def handle_rod_file(self, filepath) -> Dict[str, Any]:

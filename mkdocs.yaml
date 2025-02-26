@@ -1,0 +1,46 @@
+site_name: pynxtools-raman
+site_description: |
+  The documentation for the pynxtools-raman plugin
+site_author: The FAIRmat authors
+nav:
+  - Home: index.md
+  - Guides:
+    - guides/installation.md
+    - guides/convert_data.md
+    - guides/download_rod.md
+    - guides/adjust_config_file.md
+  - Reference:
+    - reference/witec.md
+    - reference/rod.md
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.code.annotate
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: True
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji
+  - pymdownx.extra
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+use_directory_urls: false
+plugins:
+    - search
+    - macros:
+        module_name: docs/macros
+extra_css:
+  - stylesheets/extra.css

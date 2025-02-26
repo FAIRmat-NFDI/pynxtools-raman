@@ -81,6 +81,8 @@ dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/con
 
 Then you can inspect the generated file at [this website](https://h5web.panosc.eu/h5wasm) or in VScode via the extension "H5web".
 
+## Docs
+Extensive documentation of this pynxtools plugin is available [here](https://fairmat-nfdi.github.io/pynxtools-raman/). You can find information about getting started, how-to guides, the supported file formats, how to get involved, and much more there.
 
 ## Contact person in FAIRmat for this reader
 Ron Hildebrandt

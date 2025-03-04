@@ -207,9 +207,6 @@ raman_app = AppEntryPoint(
                         "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 6, "x": 0}
                     },
                 },
-
-
-
             ]
         },
     ),

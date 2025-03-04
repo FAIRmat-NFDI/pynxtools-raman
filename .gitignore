@@ -199,9 +199,11 @@ cython_debug/
 .pyenv
 *.pyc
 *.txt
+
 !src/download_rod_files/*.txt
 !tests/data/witec/*.txt
 !examples/witec/txt/*.txt
+!examples/beam_path/raman_data_for_nexus_file/*.txt
 !requirements.txt
 !dev-requirements.txt
 build/

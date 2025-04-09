@@ -153,7 +153,7 @@ raman_app = AppEntryPoint(
                             options=12,
                         ),
                         MenuItemTerms(
-                            name="Short Name",
+                            title="Short Name",
                             search_quantity=f"data.ENTRY.INSTRUMENT.name___short_name#{schema}",
                             width=12,
                             options=12,

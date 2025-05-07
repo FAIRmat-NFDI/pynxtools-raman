@@ -217,7 +217,7 @@ class RamanReader(MultiFormatReader):
             "/spectral_filter_TYPE[",
             "/temp_control_TYPE[",
             "/software_TYPE[",
-            "/LENS_OPT[",
+            "/OPTICAL_LENS[",
             "/identifierNAME[",
         ]
         if self.eln_data.get(key) is None:

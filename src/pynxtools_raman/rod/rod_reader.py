@@ -191,3 +191,12 @@ def post_process_rod(self) -> None:
         ] = "nm"
         # remove this key from original input data
         del self.missing_meta_data["_raman_measurement_device.resolution"]
+
+    diffraction_grating = self.raman_data.get(
+        "_raman_measurement_device.diffraction_grating"
+    )
+
+    if diffraction_grating is not None:
+        self.raman_data[
+            "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period"
+        ] = 1 / float(diffraction_grating)

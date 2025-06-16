@@ -99,8 +99,8 @@ instrument:
       model: UHTS300M
     grating:
       period:
-        value: 600.0
-        unit: counts / mm
+        value: 0.00167
+        unit: mm
     wavelength:
       value: 596.989 ##Spectral Center [rel. 1/cm]: 2042.739
       unit: nm

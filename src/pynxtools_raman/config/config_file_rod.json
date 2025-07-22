@@ -11,9 +11,11 @@
   "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/count_time": "@data:_raman_measurement.integration_time",
   "/ENTRY[entry]/INSTRUMENT[instrument]/detector_TYPE[detector_ccd]/detector_channel_type": "single-channel",
   "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source_532nmlaser]/type": "@data:_raman_measurement_device.excitation_laser_type",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/SOURCE[source_532nmlaser]/type/@custom":true,
   "/ENTRY[entry]/INSTRUMENT[instrument]/FABRICATION[device_information]/vendor": "@data:_raman_measurement_device.company",
   "/ENTRY[entry]/INSTRUMENT[instrument]/FABRICATION[device_information]/model": "@data:_raman_measurement_device.model",
   "/ENTRY[entry]/INSTRUMENT[instrument]/OPTICAL_LENS[objective_lens]/type": "@data:_raman_measurement_device.optics_type",
+  "/ENTRY[entry]/INSTRUMENT[instrument]/OPTICAL_LENS[objective_lens]/type/@custom":true,
   "/ENTRY[entry]/INSTRUMENT[instrument]/OPTICAL_LENS[objective_lens]/magnification": "@data:_raman_measurement_device.microscope_objective_magnification",
   "/ENTRY[entry]/INSTRUMENT[instrument]/OPTICAL_LENS[objective_lens]/numerical_aperture": "@data:_raman_measurement_device.microscope_numerical_aperture",
   "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period": "@data",
@@ -46,6 +48,7 @@
   "/ENTRY[entry]/SAMPLE[sample]/identifier/@type": "@data:COD_service_name",
   "/ENTRY[entry]/experiment_type": "Raman spectroscopy",
   "/ENTRY[entry]/raman_experiment_type": "other",
+  "/ENTRY[entry]/raman_experiment_type/@custom":true,
   "/ENTRY[entry]/title": "['@data:_cod_original_formula_sum','@data:_chemical_formula_sum','@data:_chemical_formula_structural','@data:_chemical_name_mineral','@data:_chemical_name_systematic']",
   "/ENTRY[entry]/start_time": "@data:_raman_measurement.datetime_initiated",
   "/ENTRY[entry]/@default": "data",
@@ -59,6 +62,7 @@
   "/ENTRY[entry]/DATA[data]/AXISNAME[x_values_raman]/@units": "1/cm",
   "/ENTRY[entry]/identifier_experiment": "@data:_journal_paper_doi",
   "/ENTRY[entry]/identifier_entry": "@data:_rod_database.code",
-  "/ENTRY[entry]/identifier_entry/@type": "Raman open databse ID"
+  "/ENTRY[entry]/identifier_entry/@type": "Raman open database ID",
+  "/ENTRY[entry]/identifier_entry/@type_custom":true
 }
 

@@ -6,24 +6,18 @@ jobs:
   linting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Install uv and set the python version to 3.12
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.10"
-      - name: Install uv
+          python-version: 3.12
+      - name: Install package and dev dependencies
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-      - name: Install package
-        run: |
-          uv pip install --system --no-deps .
-      - name: Install dev requirements
-        run: |
-          uv pip install --system -r dev-requirements.txt
-      - name: ruff
+          uv pip install ".[dev]"
+      - name: ruff check
         run: |
           ruff check src/pynxtools_raman tests
-      - name: ruff formatting
+      - name: ruff format
         run: |
           ruff format --check src/pynxtools_raman tests
       - name: mypy

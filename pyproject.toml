@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
     "pynxtools>=0.10.9",
     "gemmi>=0.6.7",
+    "requests"
 ]
 
 [project.optional-dependencies]

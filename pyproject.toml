@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64.0.1", "setuptools-scm[toml]>=6.2"]
+requires = ["setuptools>=78.1.1", "setuptools-scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ dynamic = ["version"]
 authors = [
     { name = "The NOMAD Authors" },
 ]
-description = "A reader for transferring raman data from vendor formats to NeXus and NOMAD."
+description = "A reader for transferring Raman data from vendor formats to NeXus and NOMAD."
 readme = "README.md"
 license= { file = "LICENSE" }
 requires-python = ">=3.9"
@@ -23,9 +23,32 @@ classifiers = [
 dependencies = [
     "pynxtools>=0.10.9",
     "gemmi>=0.6.7",
-    "requests>=2.27.1,<2.32.0"
+    "requests"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "ruff>=0.12.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "structlog",
+    "types-pyyaml",
+    "types-pytz",
+    "types-requests",
+    "pre-commit",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocs-material-extensions",
+    "mkdocs-macros-plugin",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/FAIRmat-NFDI/pynxtools-raman"
+"Bug Tracker" = "https://github.com/FAIRmat-NFDI/pynxtools-raman/issues"
 [project.entry-points."pynxtools.reader"]
 raman = "pynxtools_raman.reader:RamanReader"
 
@@ -43,26 +66,6 @@ where = [
 
 [tool.setuptools.package-data]
 pynxtools_raman = ["*.json"]
-
-
-[project.urls]
-"Homepage" = "https://github.com/FAIRmat-NFDI/pynxtools-raman"
-"Bug Tracker" = "https://github.com/FAIRmat-NFDI/pynxtools-raman/issues"
-[project.optional-dependencies]
-dev = [
-    "mypy",
-    "ruff>=0.6",
-    "pytest",
-    "types-pyyaml",
-    "pip-tools",
-    "pre-commit",
-]
-docs = [
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocs-material-extensions",
-    "mkdocs-macros-plugin",
-]
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"

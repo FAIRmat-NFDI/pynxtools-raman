@@ -21,7 +21,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pynxtools>=0.10.9",
+    "pynxtools>=0.11.0",
     "gemmi>=0.6.7",
     "requests"
 ]

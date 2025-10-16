@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: 'pynxtools-raman: A pynxtools reader plugin for Raman spectroscopy data'
-version: 0.1.0
+version: 0.1.1
 message:
   If you use this software, please cite it using the
   metadata from this file.
@@ -8,19 +8,19 @@ type: software
 authors:
   - given-names: Ron
     family-names: Hildebrandt
-    orcid: https://orcid.org/0000-0001-6932-604X
+    orcid: 'https://orcid.org/0000-0001-6932-604X'
   - given-names: Lukas
     family-names: Pielsticker
-    orcid: https://orcid.org/0000-0001-9361-8333
+    orcid: 'https://orcid.org/0000-0001-9361-8333'
   - given-names: Rubel
     family-names: Mozumder
-    orcid: https://orcid.org/0009-0007-5926-6646
+    orcid: 'https://orcid.org/0009-0007-5926-6646'
   - given-names: Florian
     family-names: Dobener
-    orcid: https://orcid.org/0000-0003-1987-6224
+    orcid: 'https://orcid.org/0000-0003-1987-6224'
   - given-names: Sandor
     family-names: Brockhauser
-    orcid: https://orcid.org/0000-0002-9700-4803
+    orcid: 'https://orcid.org/0000-0002-9700-4803'
 doi: 10.5281/zenodo.13951684
 repository-code: https://github.com/FAIRmat-NFDI/pynxtools-raman
 url: https://zenodo.org/records/13951684

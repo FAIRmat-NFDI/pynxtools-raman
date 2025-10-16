@@ -9,6 +9,6 @@ to a NeXus file.
 - Go into the root folder of this repository (default "pynxtools-raman")
 - Copy and paste:
     ```
-    dataconverter examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output examples/witec/txt/witec_example_neuxs.nxs
+    dataconverter examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output examples/witec/txt/witec_example_nexus.nxs
     ```
-- A new file should be created at `examples/witec/txt/witec_example_neuxs.nxs`.
+- A new file should be created at `examples/witec/txt/witec_example_nexus.nxs`.

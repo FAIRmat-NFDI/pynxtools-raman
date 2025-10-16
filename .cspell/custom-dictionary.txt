@@ -1,0 +1,24 @@
+# Custom Dictionary Words
+Brockhauser
+Dobener
+Florian
+Forschungsgemeinschaft
+Hildebrandt
+Lukas
+Mozumder
+Multiformat
+Pielsticker
+Raman
+Sandor
+WITec
+dataconverter
+ellips
+longname
+multiformat
+nexus
+orcid
+pynxtools
+raman
+unfindable
+witec
+zenodo

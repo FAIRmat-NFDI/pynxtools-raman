@@ -33,7 +33,7 @@ keywords:
 abstract:
   pynxtools-raman is a reader plugin for pynxtools (https://github.com/FAIRmat-NFDI/pynxtools)
   written in Python. pynxtools-raman is a tool for reading and translating Raman spectroscopy
-  data from propietary and open data formats and standardizing it such that it is compliant with
+  data from proprietary and open data formats and standardizing it such that it is compliant with
   the NeXus application definitions NXoptical_spectroscopy and NXraman
   (https://fairmat-nfdi.github.io/nexus_definitions/).
 

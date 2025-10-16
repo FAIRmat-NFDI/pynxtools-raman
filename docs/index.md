@@ -50,7 +50,7 @@ A current use case can be found [here](https://spectra.adma.ai/search/) with an 
 
 Current examples of implementations are: 
 
-- [WITEC Alpha](reference/witec.md)
+- [WITec Alpha](reference/witec.md)
 - [Raman Open Database](reference/rod.md)
 
 </div>

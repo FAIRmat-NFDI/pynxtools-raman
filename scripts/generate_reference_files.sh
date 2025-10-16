@@ -4,7 +4,7 @@ NXDL=NXraman
 
 function update_witec_ref {
   cd witec/
-  echo "Update WITEC reference files"
+  echo "Update WITec reference files"
   dataconverter Si-wafer-Raman-Spectrum-1.txt  eln_data.yaml --reader $READER --nxdl $NXDL --output example.nxs &> ref_output.txt
   cd ..
 }

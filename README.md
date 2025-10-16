@@ -44,7 +44,7 @@ You see three Folders:
 - tests: contains a test procedure and files, which are required for software development
 - src/pynxtools_raman: source files, which contain the sub-reader function for Raman experiments. This only works in combination with the Python package [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools). This is a specialization of the [Multiformat Reader](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html). There are as well sub-reader functions for a WITec device and files from the [Raman Open Database](https://solsa.crystallography.net/rod/new.html?CODSESSION=f4b7fb6d2jsataebeph9qkchue). In addition, config.json files are located in src/pynxtools_raman/config. These are necessary to map the input data via the Multiformat Reader to the NeXus concepts. These config files allow individual adjustments, as different laboratories may have different electronic lab notebook structures.
 
-Consider setting up an invididual [python environment](https://realpython.com/python-virtual-environments-a-primer/), to seperate the python fuctnionalities of this package from the python funtionalities of your operating system:
+Consider setting up an individual [python environment](https://realpython.com/python-virtual-environments-a-primer/), to separate the python functionalities of this package from the python functionalities of your operating system:
 For Ubuntu-based systems:
 ```shell
 python -m venv .pyenv
@@ -64,18 +64,18 @@ pip install .
 **Perform a data conversion**
 for the WITec dataset via:
 ```shell
-dataconverter examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output new_witec_example_neuxs.nxs
+dataconverter examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output new_witec_example_nexus.nxs
 ```
 
 and for the Raman Open Database dataset set via:
 ```shell
-dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output new_rod_example_neuxs.nxs
+dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output new_rod_example_nexus.nxs
 ```
 
 **For Example for the Raman Open Database command:**
 - You assign the reader name via `--reader raman`.
 - You assign the NeXus application definition, on which the output will be based via `--nxdl NXraman`.
-- You specify the name and path of the output file via `--output new_rod_example_neuxs.nxs`.
+- You specify the name and path of the output file via `--output new_rod_example_nexus.nxs`.
 - You assign an individualized config file via `src/pynxtools_raman/config/config_file_rod.json`. The config file is detected by its extension `.json`.
 - You give the file which includes the meta and measurement data via `examples/database/rod/rod_file_1000679.rod`. The parser is specified to detect the `.rod` file, and handle the content appropriately.
 

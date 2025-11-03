@@ -1,0 +1,20 @@
+{
+  "template": "git@github.com:FAIRmat-NFDI/pynxtools-plugin-template.git",
+  "commit": "283723a9ec41980126412c794cab37e8a60428fe",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "reader_name": "raman",
+      "supported_nxdl": "NXraman",
+      "short_description": "A pynxtools reader plugin for transferring Raman data from vendor formats to NeXus and NOMAD.",
+      "author_name": "The NOMAD Authors",
+      "author_email": "fairmat@physik.hu-berlin.de",
+      "license": "Apache Software License 2.0",
+      "vscode_settings": "True",
+      "include_nomad_app": "False",
+      "include_nomad_example_upload": "True",
+      "zenodo_record": 15847670
+    }
+  },
+  "directory": null
+}

@@ -21,9 +21,9 @@ authors:
   - given-names: Sandor
     family-names: Brockhauser
     orcid: 'https://orcid.org/0000-0002-9700-4803'
-doi: 10.5281/zenodo.13951684
+doi: 10.5281/zenodo.15847670
 repository-code: https://github.com/FAIRmat-NFDI/pynxtools-raman
-url: https://zenodo.org/records/13951684
+url: https://zenodo.org/records/15847670
 keywords:
   - Raman spectroscopy
   - optical spectroscopy

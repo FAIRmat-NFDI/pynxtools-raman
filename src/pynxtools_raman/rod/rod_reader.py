@@ -1,16 +1,14 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Union
 
 import gemmi  # for cif file handling
-import numpy as np
 
 logger = logging.getLogger("pynxtools")
 
 
 class RodParser:
     """
-    This class provides the ultilieies to read in a .rod file with "get_cif_file_content".
+    This class provides the utilities to read in a .rod file with "get_cif_file_content".
     Then extract all data via "extract_keys_and_values_from_cif" into a dictionary.
     """
 
@@ -19,7 +17,7 @@ class RodParser:
         self.cif_block = None
         self.lines = []
 
-    def _read_lines(self, file: Union[str, Path]):
+    def _read_lines(self, file: str | Path):
         """
         Read all lines from the input files.
         """
@@ -65,7 +63,7 @@ class RodParser:
                 cif_key_loop_boolean_dict[self.lines[key_pos].replace("\n", "")] = True
             if key_pos not in key_pos_in_loops:
                 # some keys have their values on the same line, some on other lines
-                # Extract only the key, as this is always avaialble.
+                # Extract only the key, as this is always available.
                 # Use the key later to get the respective values
                 if " " in self.lines[key_pos]:
                     key, value = self.lines[key_pos].split(maxsplit=1)
@@ -84,7 +82,7 @@ class RodParser:
             return cif_key_loop_boolean_dict
 
     def key_pos_after_loop(self, loop_pos_lists, key_pos_list):
-        loop_key_positons = []
+        loop_key_positions = []
         for loop_pos_list in loop_pos_lists:
             counter = 1
             while loop_pos_list + counter in key_pos_list:
@@ -92,14 +90,14 @@ class RodParser:
                     counter >= 100
                 ):  # implemented to avoid infinite loop, how to do better?
                     raise IndexError
-                loop_key_positons.append(loop_pos_list + counter)
+                loop_key_positions.append(loop_pos_list + counter)
                 counter += 1
 
-        return loop_key_positons
+        return loop_key_positions
 
     def get_cif_value_from_key(
         self, value_key: str, is_cif_loop_value=False
-    ) -> Union[str, list]:
+    ) -> str | list:
         """
         Parse the top-level Prodigy export settings into a dict.
 
@@ -110,7 +108,7 @@ class RodParser:
 
         is_cif_loop_value : boolean
             if the key value, is part of a loop structure, this has to be set
-            correctly to extracat the respective array-like values
+            correctly to extract the respective array-like values
 
         Returns
         -------
@@ -137,10 +135,10 @@ class RodParser:
             output_list = []
             for element in block.find_loop(value_key):
                 output_list.append(element)
-            # try: # try to conver tto numpy array
+            # try: # try to convert to numpy array
             #    output_list = np.array(output_list, dtype=float)
             #    return output_list
-            try:  # try to conver tto numpy array
+            try:  # try to convert to numpy array
                 output_list_float = [float(item) for item in output_list]
                 return output_list_float
             except ValueError:  # default string output if not convertable to float
@@ -170,14 +168,14 @@ def post_process_rod(self) -> None:
     wavelength_nm = float(
         self.raman_data.get("_raman_measurement_device.excitation_laser_wavelength")
     )
-    resolution_invers_cm = float(
+    resolution_inverse_cm = float(
         self.raman_data.get("_raman_measurement_device.resolution")
     )
 
-    if wavelength_nm is not None and resolution_invers_cm is not None:
-        # assume the resolution is referd to the resolution at the laser wavelength
-        wavelength_invers_cm = 1e7 / wavelength_nm
-        resolution_nm = resolution_invers_cm / wavelength_invers_cm * wavelength_nm
+    if wavelength_nm is not None and resolution_inverse_cm is not None:
+        # assume the resolution is referred to the resolution at the laser wavelength
+        wavelength_inverse_cm = 1e7 / wavelength_nm
+        resolution_nm = resolution_inverse_cm / wavelength_inverse_cm * wavelength_nm
 
         # update the data dictionary
         self.raman_data[

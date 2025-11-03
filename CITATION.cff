@@ -21,8 +21,8 @@ authors:
   - given-names: Sandor
     family-names: Brockhauser
     orcid: 'https://orcid.org/0000-0002-9700-4803'
-doi: 10.5281/zenodo.15847670
 repository-code: https://github.com/FAIRmat-NFDI/pynxtools-raman
+doi: 10.5281/zenodo.15847670
 url: https://zenodo.org/records/15847670
 keywords:
   - Raman spectroscopy
@@ -32,7 +32,9 @@ keywords:
   - NeXus
 abstract:
   pynxtools-raman is a reader plugin for pynxtools (https://github.com/FAIRmat-NFDI/pynxtools)
-  written in Python. pynxtools-raman is a tool for reading and translating Raman spectroscopy
+  written in Python. 
+  
+  pynxtools-raman is a tool for reading and translating Raman spectroscopy
   data from proprietary and open data formats and standardizing it such that it is compliant with
   the NeXus application definitions NXoptical_spectroscopy and NXraman
   (https://fairmat-nfdi.github.io/nexus_definitions/).
@@ -42,7 +44,7 @@ abstract:
 
   The work is funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) - 460197019 (FAIRmat)
   (https://gepris.dfg.de/gepris/projekt/460197019?language=en).
-license: Apache-2.0
+license: Apache Software License 2.0
 funding:
   - name: Deutsche Forschungsgemeinschaft
     award-number: 460197019

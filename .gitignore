@@ -88,8 +88,6 @@ cover/
 
 # Django stuff:
 *.log
-!tests/data/dataconverter/readers/mpes/Ref_nexus_mpes.log
-!tests/data/nexus/Ref_nexus_test.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -203,8 +201,7 @@ cython_debug/
 !tests/data/witec/*.txt
 !examples/witec/txt/*.txt
 !tests/data/rod/*.txt
-!requirements.txt
-!dev-requirements.txt
 build/
 nexusparser.egg-info/PKG-INFO
-.python-version
++.python-version
++!.cspell/custom-dictionary.txt

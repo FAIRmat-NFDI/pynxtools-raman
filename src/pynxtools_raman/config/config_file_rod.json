@@ -58,7 +58,7 @@
   "/ENTRY[entry]/DATA[data]/AXISNAME[x_values_raman]":"@data:_raman_spectrum.raman_shift",
   "/ENTRY[entry]/DATA[data]/AXISNAME[x_values_raman]/@units": "1/cm",
   "/ENTRY[entry]/identifier_experiment": "@data:_journal_paper_doi",
-  "/ENTRY[entry]/identifier_entry": "@data:_rod_database.code",
-  "/ENTRY[entry]/identifier_entry/@type": "Raman open databse ID"
+  "/ENTRY[entry]/identifierNAME[identifier_entry]": "@data:_rod_database.code",
+  "/ENTRY[entry]/identifierNAME[identifier_entry]/@type": "Raman open databse ID"
 }
 

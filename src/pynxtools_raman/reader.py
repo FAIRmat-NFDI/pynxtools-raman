@@ -22,7 +22,7 @@ import datetime
 import logging
 import re
 from pathlib import Path
-from typing import Any  # Optional, Union, Set
+from typing import Any
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml

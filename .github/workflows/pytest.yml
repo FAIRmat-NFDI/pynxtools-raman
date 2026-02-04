@@ -16,9 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
       - name: Install uv and set the python version to ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v5
         with:
@@ -35,4 +32,11 @@ jobs:
           uv pip install pynxtools@git+https://github.com/FAIRmat-NFDI/pynxtools
       - name: Test with pytest
         run: |
-          pytest -sv --show-capture=no tests
+          coverage run -m pytest -sv --show-capture=no tests
+      - name: Submit to coveralls
+        continue-on-error: true
+        if: ${{ matrix.python-version == '3.12' }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            coveralls --service=github

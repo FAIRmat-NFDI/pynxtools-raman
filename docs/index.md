@@ -16,26 +16,27 @@ A current use case can be found [here](https://spectra.adma.ai/search/) with an 
 
 <div markdown="block" class="home-grid">
 
-<div markdown="block"> 
+<div markdown="block">
 
-### Tutorials
+### Tutorial
 
+- [Installation guide](tutorial/installation.md)
+- [Development guide](tutorial/contributing.md)
 - [Config file and customized data conversion](tutorial/adjust_config_file.md)
 
 </div>
 
 
-<div markdown="block"> 
+<div markdown="block">
 
 ### How-to guides
 
-- [Installation](how-tos/installation.md)
 - [Convert data to NeXus files](how-tos/convert_data.md)
 - [Download Raman Open Database files](how-tos/download_rod.md)
 
 </div>
 
-<div markdown="block"> 
+<div markdown="block">
 
 ### Learn
 
@@ -46,7 +47,7 @@ A current use case can be found [here](https://spectra.adma.ai/search/) with an 
 <div markdown="block">
 
 
-### References
+### Reference
 
 Current examples of implementations are: 
 
@@ -56,6 +57,16 @@ Current examples of implementations are:
 </div>
 </div>
 
+<h2> Contact </h2>
+
+For questions or suggestions:
+
+- Open an issue on the [`pynxtools-raman` GitHub](https://github.com/FAIRmat-NFDI/pynxtools-raman/issues)
+- Join our [Discord channel](https://discord.gg/Gyzx3ukUw8)
+- Get in contact with our [lead developers](contact.md).
+
 <h2>Project and community</h2>
 
-Any questions or suggestions? [Get in touch!](https://www.fair-di.eu/fairmat/about-fairmat/team-fairmat)
+- [NOMAD code guidelines](https://nomad-lab.eu/prod/v1/staging/docs/reference/code_guidelines.html)
+
+[The work is funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) - 460197019 (FAIRmat).](https://gepris.dfg.de/gepris/projekt/460197019?language=en)

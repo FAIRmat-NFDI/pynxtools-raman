@@ -1,8 +1,7 @@
 import argparse
+import logging
 
 import requests
-
-import logging
 
 logger = logging.getLogger("pynxtools")
 
@@ -27,11 +26,11 @@ def save_rod_file_from_ROD_via_API(rod_id: int):
         logger.info(f"Saved .rod file with ID '{rod_id}' to file '{filename}'")
 
     except requests.exceptions.ConnectionError as con_err:
-        logger.error(f"ConnectionError occured: {con_err}")
+        logger.error(f"ConnectionError occurred: {con_err}")
     except requests.exceptions.HTTPError as http_err:
-        logger.error(f"CHTTPError occured: {http_err}")
+        logger.error(f"CHTTPError occurred: {http_err}")
     except requests.exceptions.RequestException as req_exc:
-        logger.error(f"RequestException occured: {req_exc}")
+        logger.error(f"RequestException occurred: {req_exc}")
 
 
 def trigger_rod_download():

@@ -2,22 +2,35 @@
 READER=raman
 NXDL=NXraman
 
-function update_witec_ref {
-  cd witec/
-  echo "Update WITec reference files"
-  dataconverter Si-wafer-Raman-Spectrum-1.txt  eln_data.yaml --reader $READER --nxdl $NXDL --output example.nxs &> ref_output.txt
+#!/bin/bash
+function update_ref_file {
+  local FOLDER=$1
+  local NXDL=$2
+  cd $FOLDER
+  if [[ "$FOLDER" == "." ]]; then
+    FOLDER="test"
+  fi
+  echo "Update $FOLDER reference file for $NXDL"
+  files=$(find . -type f \( ! -name "*.log" -a ! -name "*.nxs" -a ! -name "ref_output.txt" \))
+  dataconverter ${files[@]} --reader $READER --nxdl $NXDL --ignore-undocumented --output "${FOLDER}_ref.nxs" &> ref_output.txt
   cd ..
 }
 
-function update_rod_ref {
-  cd rod/
-  echo "Update rod reference files"
-  dataconverter rod_file_1000679.rod --reader $READER --nxdl $NXDL --output example.nxs &> ref_output.txt
-  cd ..
-}
+folders=(
+  "witec"
+  "rod"
+)
+
+READER="raman"
+nxdls=(
+  "NXraman"
+)
 
 project_dir=$(dirname $(dirname $(realpath $0)))
 cd $project_dir/tests/data
 
-update_witec_ref
-update_rod_ref
+for folder in "${folders[@]}"; do
+  for nxdl in "${nxdls[@]}"; do
+    update_ref_file "$folder" "$nxdl"
+  done
+done

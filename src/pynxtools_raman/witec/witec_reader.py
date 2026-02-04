@@ -1,8 +1,6 @@
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
-import numpy as np
 
+import numpy as np
 
 logger = logging.getLogger("pynxtools")
 
@@ -12,7 +10,7 @@ def parse_txt_file(self, filepath):
     Read a .txt file from Witec Alpha Raman spectrometer and return a data dictionary
     which contains Raman shift and Intensity
     """
-    with open(filepath, "r") as file:
+    with open(filepath) as file:
         lines = file.readlines()
 
     # Initialize dictionaries to hold header and data sections
@@ -46,12 +44,12 @@ def parse_txt_file(self, filepath):
 
         # Parse the data section
         elif current_section == "data" and "," in line:
-            # The header is set excactly until the float-like column data starts
+            # The header is set exactly until the float-like column data starts
             # Rework this later to extract full metadata
             if line_count <= data_mini_header_length:
                 if line.startswith("[Header]"):
                     logger.info(
-                        f"[Header] elements in the file {filepath}, are not parsed yet. Consider adden the respective functionality."
+                        f"[Header] elements in the file {filepath}, are not parsed yet. Consider adding the respective functionality."
                     )
             if line_count > data_mini_header_length:
                 values = line.split(",")

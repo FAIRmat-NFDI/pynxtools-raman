@@ -1,3 +1,4 @@
+#
 # Copyright The NOMAD Authors.
 #
 # This file is part of NOMAD. See https://nomad-lab.eu for further info.
@@ -21,7 +22,7 @@ import datetime
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple  # Optional, Union, Set
+from typing import Any
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
@@ -31,9 +32,9 @@ from pynxtools_raman.witec.witec_reader import parse_txt_file, post_process_wite
 
 logger = logging.getLogger("pynxtools")
 
-CONVERT_DICT: Dict[str, str] = {}
+CONVERT_DICT: dict[str, str] = {}
 
-REPLACE_NESTED: Dict[str, str] = {}
+REPLACE_NESTED: dict[str, str] = {}
 
 
 class RamanReader(MultiFormatReader):
@@ -44,9 +45,9 @@ class RamanReader(MultiFormatReader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.raman_data_dicts: List[Dict[str, Any]] = []
-        self.raman_data: Dict[str, Any] = {}
-        self.eln_data: Dict[str, Any] = {}
+        self.raman_data_dicts: list[dict[str, Any]] = []
+        self.raman_data: dict[str, Any] = {}
+        self.eln_data: dict[str, Any] = {}
         self.config_file: Path
 
         self.missing_meta_data = None
@@ -59,7 +60,7 @@ class RamanReader(MultiFormatReader):
             ".rod": self.handle_rod_file,
         }
 
-    def set_config_file(self, file_path: Path) -> Dict[str, Any]:
+    def set_config_file(self, file_path: Path) -> dict[str, Any]:
         if self.config_file is not None:
             logger.info(
                 f"Config file already set. Replaced by the new file {file_path}."
@@ -67,7 +68,7 @@ class RamanReader(MultiFormatReader):
         self.config_file = file_path
         return {}
 
-    def handle_eln_file(self, file_path: str) -> Dict[str, Any]:
+    def handle_eln_file(self, file_path: str) -> dict[str, Any]:
         self.eln_data = parse_yml(
             file_path,
             convert_dict=CONVERT_DICT,
@@ -76,7 +77,7 @@ class RamanReader(MultiFormatReader):
 
         return {}
 
-    def handle_rod_file(self, filepath) -> Dict[str, Any]:
+    def handle_rod_file(self, filepath) -> dict[str, Any]:
         # specify default config file for rod files
         reader_dir = Path(__file__).parent
         self.config_file = reader_dir.joinpath("config", "config_file_rod.json")  # pylint: disable=invalid-type-comment
@@ -95,7 +96,7 @@ class RamanReader(MultiFormatReader):
             self.config_file = Path()
 
         # unit_cell_alphabetagamma
-        # replace the [ and ] to avoid confliucts in processing with pynxtools NXclass assignments
+        # replace the [ and ] to avoid conflicts in processing with pynxtools NXclass assignments
         self.raman_data = {
             key.replace("_[local]_", "_local_"): value
             for key, value in self.raman_data.items()
@@ -156,7 +157,7 @@ class RamanReader(MultiFormatReader):
                     # Apply the specified timezone to the datetime object
                     date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
 
-                # assign the dictionary the corrrected date format
+                # assign the dictionary the corrected date format
                 self.raman_data[time_key] = date_time_obj.isoformat()
 
         # remove capitalization
@@ -190,7 +191,7 @@ class RamanReader(MultiFormatReader):
     def get_eln_data(self, key: str, path: str) -> Any:
         """
         Returns data from the eln file. This is done via the file: "config_file.json".
-        There are two sitations:
+        There are two situations:
             1. The .json file has only a key assigned
             2. The .json file has a key AND a value assigned.
         The assigned value should be a "path", which reflects another entry in the eln file.
@@ -235,13 +236,13 @@ class RamanReader(MultiFormatReader):
                 return self.eln_data.get(result)
             else:
                 logger.warning(
-                    f"No key found during eln_data processsing for key '{key}' after it's modification to '{result}'."
+                    f"No key found during eln_data processing for key '{key}' after it's modification to '{result}'."
                 )
         return self.eln_data.get(key)
 
     def get_data(self, key: str, path: str) -> Any:
         """
-        Returns the data from a .rod file (Raman Open Database), which was trasnferred into a dictionary.
+        Returns the data from a .rod file (Raman Open Database), which was transferred into a dictionary.
         """
 
         value = self.raman_data.get(path)
@@ -252,7 +253,7 @@ class RamanReader(MultiFormatReader):
             return self.raman_data.get(key)
 
         if self.missing_meta_data:
-            # this if condition is required, to only delete keys which are abaialble by the data.
+            # this if condition is required, to only delete keys which are available by the data.
             # e.g. is defined to extract it via config.json, but there is no value in meta data
             if path in self.missing_meta_data.keys():
                 del self.missing_meta_data[path]
@@ -272,8 +273,8 @@ class RamanReader(MultiFormatReader):
     def read(
         self,
         template: dict = None,
-        file_paths: Tuple[str] = None,
-        objects: Tuple[Any] = None,
+        file_paths: tuple[str] = None,
+        objects: tuple[Any] = None,
         **kwargs,
     ) -> dict:
         template = super().read(template, file_paths, objects, suppress_warning=True)

@@ -2,8 +2,11 @@
 Brockhauser
 CHTTP
 Dobener
+Draxl
 Florian
 Forschungsgemeinschaft
+Grundmann
+Heiko
 Hildebrandt
 Lukas
 MONOCHROMATOR
@@ -12,6 +15,7 @@ Multiformat
 Pielsticker
 Raman
 Sandor
+Sturm
 WITec
 Xraman
 alphabetagamma

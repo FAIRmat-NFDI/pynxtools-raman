@@ -2,7 +2,7 @@
 
 This tutorial will guide you through on how to set up a working environment for developing `pynxtools-raman`.
 
-## What should you should know before this tutorial?
+## What should you know before this tutorial?
 
 - You should read the [guide on getting started with `pynxtools`](https://fairmat-nfdi.github.io/pynxtools/getting-started.html).
 - You should read the [installation tutorial](installation.md).

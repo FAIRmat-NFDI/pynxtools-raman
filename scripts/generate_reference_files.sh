@@ -6,7 +6,7 @@ NXDL=NXraman
 function update_ref_file {
   local FOLDER=$1
   local NXDL=$2
-  cd $FOLDER
+  cd "$FOLDER"
   if [[ "$FOLDER" == "." ]]; then
     FOLDER="test"
   fi

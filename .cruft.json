@@ -1,6 +1,6 @@
 {
   "template": "git@github.com:FAIRmat-NFDI/pynxtools-plugin-template.git",
-  "commit": "b49dd78c2f92b5eca8aacad371713f79d55854e2",
+  "commit": "fd28d9fbb5463af44d47d8cdee098f854f3751e6",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -12,23 +12,24 @@
       "author_name": "The NOMAD Authors",
       "author_email": "fairmat@physik.hu-berlin.de",
       "github_username": "FAIRmat-NFDI",
+      "organization_name": "fairmat-nfdi",
       "license": "Apache Software License 2.0",
       "zenodo_record": "15847670",
-      "vscode_settings": "True",
-      "include_nomad_app": "True",
-      "include_nomad_example_upload": "False",
+      "vscode_settings": true,
+      "include_nomad_app": true,
+      "include_nomad_example_upload": false,
       "include_north_tools": false,
       "north_tool_name": "raman",
       "__package_name": "pynxtools-raman",
       "__module_name": "pynxtools_raman",
       "__nomad_example": "raman_example_upload_entry_point",
       "__nomad_app": "raman_app_entry_point",
-      "__north_tool_EP_name": "north_tool",
+      "__north_tool_entry_point": "raman_north_tool_entry_point",
       "_copy_without_render": [
         "*.html"
       ],
       "_template": "git@github.com:FAIRmat-NFDI/pynxtools-plugin-template.git",
-      "_commit": "b49dd78c2f92b5eca8aacad371713f79d55854e2"
+      "_commit": "fd28d9fbb5463af44d47d8cdee098f854f3751e6"
     }
   },
   "directory": null

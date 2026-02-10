@@ -75,7 +75,7 @@ Next, we install the package in editable mode (together with its dependencies):
 
 ### Linting and formatting
 
-We are using ruff and mypy for linting, formatting, and type checking. It is recommended to use the [pre-commit hook](https://pre-commit.com/#intro) available for ruff which formats the code and checks the linting before actually making an actual Git commit.
+We are using ruff and mypy for linting, formatting, and type checking. It is recommended to use the [pre-commit hook](https://pre-commit.com/#intro) available for ruff which formats the code and checks the linting before making a Git commit.
 
 Install the precommit by running
 

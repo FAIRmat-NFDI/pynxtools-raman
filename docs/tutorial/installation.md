@@ -1,6 +1,6 @@
 # Installation guide
 
-## What should you should know before this tutorial?
+## What should you know before this tutorial?
 
 To get started, it does not hurt to read the following `pynxtools` tutorial:
 

@@ -15,21 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Tests for the NOMAD app."""
-
-import pytest
-
-try:
-    import nomad  # noqa: F401
-except ImportError:
-    pytest.skip(
-        "Skipping NOMAD app tests because nomad-lab is not installed",
-        allow_module_level=True,
-    )
 
 
-def test_importing_app():
-    # this will raise an exception if pydantic model validation fails for the app
-    from pynxtools_raman.nomad.apps import raman_app_entry_point  # noqa: PLC0415
+from packaging.version import InvalidVersion, Version
 
-    assert raman_app_entry_point.app.label == "Raman"
+from pynxtools_raman import get_pynxtools_raman_version
+
+
+def test_get_pynxtools_raman_version():
+    version = get_pynxtools_raman_version()
+    assert version != "unknown_version"
+    try:
+        Version(version)
+    except InvalidVersion:
+        assert False, f"Invalid version: {version}"

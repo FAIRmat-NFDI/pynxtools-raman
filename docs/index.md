@@ -42,8 +42,9 @@ A current use case can be found [here](https://spectra.adma.ai/search/) with an 
 
 - You may want to take a look at general concepts of NeXus and how pynxtools works in the [documentation of pynxtools](https://fairmat-nfdi.github.io/pynxtools/)
 
-</div>
+- [Note on versioning](learn/versioning.md)
 
+</div>
 <div markdown="block">
 
 

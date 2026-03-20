@@ -30,7 +30,7 @@ uv pip install pynxtools[raman]
 
 This reader plugin for [`pynxtools`](https://github.com/FAIRmat-NFDI/pynxtools) is used to translate diverse file formats from the scientific community and technology partners
 within the field of raman into a standardized representation using the
-[NeXus](https://www.nexusformat.org/) application definition [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html#nxraman).
+[NeXus](https://www.nexusformat.org/) application definition [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXraman.html#nxraman).
 
 ## Step-by-Step Example
 

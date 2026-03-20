@@ -1,7 +1,7 @@
 # Config file and customized data conversion
 
 The `pynxtools-raman` package enables the data conversion from experimental data to
-a NeXus file whereby the [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html) application definition is used.
+a NeXus file whereby the [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXraman.html) application definition is used.
 The dataconverter of `pynxtools-raman` is based on the [`MultiformatReader`](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html) from the `pynxtools` package. This allows using JSON config files to map pre-structured experimental data to NeXus concepts. You can learn more about the `MultiFormatReader` in the documentation of the `pynxtools` package ([here](https://fairmat-nfdi.github.io/pynxtools/learn/multi-format-reader.html) and [here](https://fairmat-nfdi.github.io/pynxtools/how-tos/use-multi-format-reader.html).
 
 ## How does the pre-structured experimental data look like?
@@ -97,7 +97,7 @@ the attribute `NXclass=NXentry`due to the uppercase `ENTRY`.
 Inside the group `entry`, the group with the name `instrument` is created. This group is given
 the attribute `NXclass=NXinstrument` due to the uppercase `INSTRUMENT`.
 
-Inside the group `instrument`, the group with the name `beam_incident` is created. As the input of the used NeXus definition is given as well (in this case, `NXraman`), the dataconverter infers that you refer to `beam_incident` in `INSTRUMENT`, as shown in [`NXraman`](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html). Therefore, the group is given the attribute `NXclass=NXbeam`.
+Inside the group `instrument`, the group with the name `beam_incident` is created. As the input of the used NeXus definition is given as well (in this case, `NXraman`), the dataconverter infers that you refer to `beam_incident` in `INSTRUMENT`, as shown in [`NXraman`](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXraman.html). Therefore, the group is given the attribute `NXclass=NXbeam`.
 
 
 Inside the group `beam_incident`, the field with the name `wavelength` is created.

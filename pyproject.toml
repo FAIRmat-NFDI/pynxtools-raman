@@ -57,7 +57,7 @@ nomad = ["nomad-lab[infrastructure]>=1.4.1"]
 raman = "pynxtools_raman.reader:RamanReader"
 
 [project.entry-points.'nomad.plugin']
-raman_app_entry_point = "pynxtools_raman.nomad.apps:raman_app_entry_point"
+raman_app = "pynxtools_raman.nomad.apps:raman_app"
 
 [project.scripts]
 download_rod_file = "pynxtools_raman.rod.rod_get_file:trigger_rod_download"

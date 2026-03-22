@@ -36,7 +36,7 @@ except ImportError as exc:
 
 schema = "pynxtools.nomad.schema.Root"
 
-raman_app_entry_point = AppEntryPoint(
+raman_app = AppEntryPoint(
     name="Raman App",
     description="App for Raman data.",
     app=App(

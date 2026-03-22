@@ -1,6 +1,6 @@
 {
   "template": "git@github.com:FAIRmat-NFDI/pynxtools-plugin-template.git",
-  "commit": "fd28d9fbb5463af44d47d8cdee098f854f3751e6",
+  "commit": "39ae64305e0f3c696003eab5cca56b49ecaf883f",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -22,14 +22,14 @@
       "north_tool_name": "raman",
       "__package_name": "pynxtools-raman",
       "__module_name": "pynxtools_raman",
-      "__nomad_example": "raman_example_upload_entry_point",
-      "__nomad_app": "raman_app_entry_point",
-      "__north_tool_entry_point": "raman_north_tool_entry_point",
+      "__nomad_example": "raman_example_upload",
+      "__nomad_app": "raman_app",
+      "__nomad_north_tool": "raman_north_tool",
       "_copy_without_render": [
         "*.html"
       ],
       "_template": "git@github.com:FAIRmat-NFDI/pynxtools-plugin-template.git",
-      "_commit": "fd28d9fbb5463af44d47d8cdee098f854f3751e6"
+      "_commit": "39ae64305e0f3c696003eab5cca56b49ecaf883f"
     }
   },
   "directory": null

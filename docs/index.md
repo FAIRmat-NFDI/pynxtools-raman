@@ -6,7 +6,7 @@ hide: toc
 
 pynxtools-raman is a free, and open-source data software for harmonizing Raman spectroscopy data and metadata for research data management using [NeXus](https://www.nexusformat.org/), implemented with the goal to make scientific research data FAIR (findable, accessible, interoperable and reusable).
 
-pynxtools-raman, which is a plugin for [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools), provides a tool for reading data from proprietary and open data formats from technology partners and the wider Raman community  (currently: `WITec` or `ROD`)  and standardizing it such that it is compliant with the NeXus application definitions [`NXoptical_spectroscopy`](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXoptical_spectroscopy.html) and [`NXraman`](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html), which is an extension of `NXoptical_spectroscopy`. pynxtools-raman is developed both as a standalone reader and as a tool within [NOMAD](https://nomad-lab.eu/), which is the open-source data management platform for materials science we are developing with [FAIRmat](https://www.fairmat-nfdi.eu/fairmat/).
+pynxtools-raman, which is a plugin for [pynxtools](https://github.com/FAIRmat-NFDI/pynxtools), provides a tool for reading data from proprietary and open data formats from technology partners and the wider Raman community  (currently: `WITec` or `ROD`)  and standardizing it such that it is compliant with the NeXus application definitions [`NXoptical_spectroscopy`](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXoptical_spectroscopy.html) and [`NXraman`](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXraman.html), which is an extension of `NXoptical_spectroscopy`. pynxtools-raman is developed both as a standalone reader and as a tool within [NOMAD](https://nomad-lab.eu/), which is the open-source data management platform for materials science we are developing with [FAIRmat](https://www.fairmat-nfdi.eu/fairmat/).
 
 pynxtools-raman solves the challenge of using heterogeneous and unfindable data formats which is common in the field of Raman spectroscopy.
 
@@ -42,8 +42,9 @@ A current use case can be found [here](https://spectra.adma.ai/search/) with an 
 
 - You may want to take a look at general concepts of NeXus and how pynxtools works in the [documentation of pynxtools](https://fairmat-nfdi.github.io/pynxtools/)
 
-</div>
+- [Note on versioning](learn/versioning.md)
 
+</div>
 <div markdown="block">
 
 

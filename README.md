@@ -5,7 +5,7 @@
 ![](https://img.shields.io/pypi/pyversions/pynxtools-raman)
 ![](https://img.shields.io/pypi/l/pynxtools-raman)
 ![](https://img.shields.io/pypi/v/pynxtools-raman)
-![](https://coveralls.io/repos/github/FAIRmat-NFDI/pynxtools_raman/badge.svg?branch=main)
+![](https://coveralls.io/repos/github/FAIRmat-NFDI/pynxtools-raman/badge.svg?branch=main)
 [![DOI](https://zenodo.org/badge/759916501.svg)](https://doi.org/10.5281/zenodo.15847670)
 
 # `pynxtools-raman`: A `pynxtools` reader for Raman data
@@ -16,11 +16,9 @@ A pynxtools reader plugin for transferring Raman data from vendor formats to NeX
 
 ## Installation
 
-It is recommended to use python 3.12 with a dedicated virtual environment for this package.
-Learn how to manage [python versions](https://github.com/pyenv/pyenv) and
-[virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
+It is recommended to use python 3.12 with a dedicated virtual environment for this package. Learn how to manage [python versions](https://github.com/pyenv/pyenv) and [virtual environments](https://realpython.com/python-virtual-environments-a-primer/).
 
-This package is a reader plugin for [`pynxtools`](https://github.com/FAIRmat-NFDI/pynxtools) and can be installed together with `pynxtools`:
+This package is a reader plugin for [`pynxtools`](https://github.com/FAIRmat-NFDI/pynxtools) and should be installed together with `pynxtools`:
 
 ```shell
 uv pip install pynxtools[raman]
@@ -30,7 +28,7 @@ uv pip install pynxtools[raman]
 
 This reader plugin for [`pynxtools`](https://github.com/FAIRmat-NFDI/pynxtools) is used to translate diverse file formats from the scientific community and technology partners
 within the field of raman into a standardized representation using the
-[NeXus](https://www.nexusformat.org/) application definition [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/contributed_definitions/NXraman.html#nxraman).
+[NeXus](https://www.nexusformat.org/) application definition [NXraman](https://fairmat-nfdi.github.io/nexus_definitions/classes/applications/NXraman.html#nxraman).
 
 ## Step-by-Step Example
 

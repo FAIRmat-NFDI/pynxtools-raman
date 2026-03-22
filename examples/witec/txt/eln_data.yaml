@@ -117,8 +117,6 @@ experiment_type: Raman spectroscopy
 raman_experiment_type: non-resonant Raman spectroscopy
 title: Si-Wafer
 start_time: '2024-06-21T14:04:54+02:00'
-definition: NXraman
-definition/@url: https://github.com/FAIRmat-NFDI/nexus_definitions/blob/fairmat/contributed_definitions/NXraman.nxdl.xml # can be removed later, if the NeXus as submodule in pynxtools is updated, just in to let CICD pass.
 measurement_file_meta_data:
   delimiter: ","
   skip_lines: 17

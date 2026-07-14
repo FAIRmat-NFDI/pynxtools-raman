@@ -42,3 +42,4 @@ unfindable
 wavenumber
 witec
 zenodo
+metainfo

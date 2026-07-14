@@ -66,3 +66,4 @@ wavenumber
 wavenumbers
 witec
 zenodo
+metainfo

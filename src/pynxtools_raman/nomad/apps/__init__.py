@@ -62,7 +62,7 @@ raman_app = AppEntryPoint(
             Column(title="Entry ID", search_quantity="entry_id", selected=True),
             Column(
                 title="Material Name",
-                search_quantity=f"data.sample[*].name_quantity#{schema}",
+                search_quantity=f"data.sample[*].name#{schema}",
                 selected=True,
             ),
             Column(
@@ -148,13 +148,13 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Name",
-                            search_quantity=f"data.instrument.name_quantity#{schema}",
+                            search_quantity=f"data.instrument.name#{schema}",
                             width=12,
                             options=12,
                         ),
                         MenuItemTerms(
                             title="Short Name",
-                            search_quantity=f"data.instrument.name_quantity__short_name#{schema}",
+                            search_quantity=f"data.instrument.name__short_name#{schema}",
                             width=12,
                             options=12,
                         ),
@@ -166,7 +166,7 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Name",
-                            search_quantity=f"data.sample.name_quantity#{schema}",
+                            search_quantity=f"data.sample.name#{schema}",
                             width=12,
                             options=12,
                         ),
@@ -183,7 +183,7 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Entry Author",
-                            search_quantity=f"data.user.name_quantity#{schema}",
+                            search_quantity=f"data.user.name#{schema}",
                             width=12,
                             options=5,
                         ),

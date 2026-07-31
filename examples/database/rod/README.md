@@ -1,7 +1,8 @@
-## WITec example Raman Multiformat Reader
-This is an example file to convert a .rod file from the [Raman Open Databse](https://solsa.crystallography.net/rod/) to a NeXus file.
+## Raman Open Database Reader
+This is an example file to convert a .rod file from the [Raman Open Database](https://solsa.crystallography.net/rod/) to a NeXus file.
 
 ## How to use
+
 - 1. Go into the root folder of this repository (default "pynxtools-raman")
 - 2. Copy and paste:
     ```
@@ -11,24 +12,17 @@ This is an example file to convert a .rod file from the [Raman Open Databse](htt
 
 ## Yet unassigned fields / ToDo-List:
 
-### Publication Data
-{'_publ_author_name': ["'Kanzaki, M.'", "'Xue, X.'", "'Amalberti, J.'", "'Zhang, Q.'"],
-'_publ_section_title': 'Raman and NMR spectroscopic characterization of high-pressure K-cymrite  (KAlSi3O8 H2O) and its anhydrous form (kokchetavite) : K-cymrite',
-'_journal_name_full': "'Journal of Mineralogical and Petrological Sciences'",
-'_journal_page_first': '114',
-'_journal_page_last': '119',
-'_journal_paper_doi': '10.2465/jmps.111020i',
-'_journal_volume': '114',
-'_journal_year': '2012',
+### Publication and ROD citation data
+
+Now mapped into two `citeID(NXcite)` instances (`cite_publication`, `cite_rod`) via `build_citation_fields()` in `rod_reader.py`, populating `author`/`doi`/`description`.
 
 ### ROD data
+
 '_rod_data_source.file': 'k-cymrite.rod',
 '_rod_data_source.block': '/var/www/html/rod/tmp/uploads/1571122279.3252-A619ABAF81C5BA8B.rod',
-'_rod_database.code': '1000679',
-
-
 
 ### RAMAN data
+
 '_raman_measurement_device.configuration': 'simple', # other options triple, other ? Does not make snse trippme monochromator, filter?
 '_raman_measurement_device.resolution': '1',        # given in 1/cm. But no field in NXoptical_spec
 '_raman_measurement_device.microscope_system': 'dispersive',    # dispersive FTIR or other
@@ -42,6 +36,7 @@ This is an example file to convert a .rod file from the [Raman Open Databse](htt
 '_raman_measurement_device.location': "'Institute for Planetary Materials, Okayama University'",
 
 ### SAMPLE
+
 '_cod_original_formula_sum': "'O9 Si3 Al K H2'",
 But there is also: (#BUT)
 '_raman_measurement.environment_details': 'The sample was measured in air.', #BUT '_raman_measurement.environment': 'Air', was included!
@@ -52,6 +47,7 @@ But there is also: (#BUT)
 '_[local]_chemical_compound_color': 'white', should go to 
 
 ### NXfit?
+
 '_raman_measurement.background_subtraction': 'no',
 '_raman_measurement.background_subtraction_details': 'No background subtraction method was applied.',
 '_raman_measurement.baseline_correction': 'no',

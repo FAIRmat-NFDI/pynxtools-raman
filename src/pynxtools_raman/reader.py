@@ -27,7 +27,11 @@ from typing import Any
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
-from pynxtools_raman.rod.rod_reader import RodParser, post_process_rod
+from pynxtools_raman.rod.rod_reader import (
+    RodParser,
+    build_citation_fields,
+    post_process_rod,
+)
 from pynxtools_raman.witec.witec_reader import parse_txt_file, post_process_witec
 
 logger = logging.getLogger("pynxtools")
@@ -103,6 +107,18 @@ class RamanReader(MultiFormatReader):
         }
 
         self.missing_meta_data = copy.deepcopy(self.raman_data)
+
+        self.raman_data.update(build_citation_fields(self.raman_data))
+        for consumed_key in (
+            "_publ_author_name",
+            "_publ_section_title",
+            "_journal_name_full",
+            "_journal_volume",
+            "_journal_page_first",
+            "_journal_page_last",
+            "_journal_year",
+        ):
+            self.missing_meta_data.pop(consumed_key, None)
 
         if self.raman_data.get("_cod_database_code") is not None or "":
             self.raman_data["COD_service_name"] = "Crystallography Open Database"

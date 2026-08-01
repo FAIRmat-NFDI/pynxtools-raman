@@ -21,7 +21,7 @@
   "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/physical_quantity": "@data",
   "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution": "@data",
   "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution/@units": "@data",
-  "/ENTRY[entry]/SAMPLE[sample]/name": "@data:_chemical_name_mineral",
+  "/ENTRY[entry]/SAMPLE[sample]/name": "['@data:_chemical_name_mineral','@data:_chemical_name_systematic']",
   "/ENTRY[entry]/SAMPLE[sample]/physical_form": "@data:_[local]_chemical_compound_state",
   "/ENTRY[entry]/SAMPLE[sample]/chemical_formula": "['@data:_cod_original_formula_sum','@data:_chemical_formula_sum','@data:_chemical_formula_structural']",
   "/ENTRY[entry]/SAMPLE[sample]/ENVIRONMENT[medium]/sample_medium": "@data:_raman_measurement.environment",

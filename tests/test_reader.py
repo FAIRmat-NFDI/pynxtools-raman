@@ -57,7 +57,7 @@ for test_case in test_cases:
     test_params,
 )
 def test_nexus_conversion(
-    nxdl, sub_reader_data_dir, ignore_lines, ignore_sections, tmp_path, caplog
+    *, nxdl, sub_reader_data_dir, ignore_lines, ignore_sections, tmp_path, caplog
 ):
     """
     Test Raman reader

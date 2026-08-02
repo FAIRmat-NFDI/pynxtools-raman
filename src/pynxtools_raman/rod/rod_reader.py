@@ -1,9 +1,22 @@
 import logging
 from pathlib import Path
+from typing import Any
 
 import gemmi  # for cif file handling
 
 logger = logging.getLogger("pynxtools")
+
+ROD_CITATION_DOI = "10.1107/S1600576719004229"
+ROD_CITATION_TEXT = (
+    "El Mendili, Y. et al. (2019). Raman Open Database: first interconnected "
+    "Raman-X-ray diffraction open-access resource for material identification. "
+    f"J. Appl. Cryst. 52, 618-625. https://doi.org/{ROD_CITATION_DOI}"
+)
+ROD_LICENSE_TEXT = (
+    "Released under the CC0 1.0 Universal Public Domain Dedication "
+    "(https://creativecommons.org/publicdomain/zero/1.0/)."
+)
+ROD_RECORD_URL_TEMPLATE = "https://solsa.crystallography.net/rod/{code}.html"
 
 
 class RodParser:
@@ -162,6 +175,74 @@ class RodParser:
             )
 
         return cif_dict_key_value_pair_dict
+
+
+def _strip_cif_quotes(value: str) -> str:
+    return value.strip().strip("'").strip('"')
+
+
+def _join_authors(author_names: str | list | None) -> str | None:
+    if not author_names:
+        return None
+    if isinstance(author_names, str):
+        author_names = [author_names]
+    cleaned = [_strip_cif_quotes(name) for name in author_names if name]
+    return "; ".join(cleaned) if cleaned else None
+
+
+def build_citation_fields(raman_data: dict) -> dict[str, Any]:
+    """
+    Build the two NXcite ("citeID") instances for a parsed .rod entry:
+
+    - citeID[cite_publication]: the original paper reporting this Raman spectrum,
+      built from the publication keys present in the .rod file.
+    - citeID[cite_rod]: the ROD record itself, including ROD's own citation
+      request and license (CC0 1.0), so the NeXus file is self-describing even
+      outside NOMAD.
+
+    Returns a dict of synthetic keys to be merged into the parsed .rod data and
+    referenced from config_file_rod.json via "@data:<key>".
+    """
+    citation_fields: dict[str, Any] = {}
+
+    author = _join_authors(raman_data.get("_publ_author_name"))
+    title = raman_data.get("_publ_section_title")
+    journal = raman_data.get("_journal_name_full")
+    volume = raman_data.get("_journal_volume")
+    page_first = raman_data.get("_journal_page_first")
+    page_last = raman_data.get("_journal_page_last")
+    year = raman_data.get("_journal_year")
+    doi = raman_data.get("_journal_paper_doi")
+
+    if author is not None:
+        citation_fields["rod_citation_publication_author"] = author
+
+    if title or doi:
+        pages = (
+            f"{page_first}-{page_last}"
+            if page_first and page_last
+            else (page_first or page_last or "")
+        )
+        description = ". ".join(part for part in (title, journal) if part)
+        tail = ", ".join(part for part in (volume, pages) if part)
+        if tail:
+            description += f", {tail}"
+        if year:
+            description += f" ({year})"
+        if description:
+            citation_fields["rod_citation_publication_description"] = f"{description}."
+
+    rod_code = raman_data.get("_rod_database.code")
+    if rod_code is not None:
+        citation_fields["rod_citation_rod_url"] = ROD_RECORD_URL_TEMPLATE.format(
+            code=rod_code
+        )
+        citation_fields["rod_citation_rod_description"] = (
+            f"Entry {rod_code} in the Raman Open Database (ROD). "
+            f"{ROD_LICENSE_TEXT} Please also cite the database: {ROD_CITATION_TEXT}"
+        )
+
+    return citation_fields
 
 
 def post_process_rod(self) -> None:

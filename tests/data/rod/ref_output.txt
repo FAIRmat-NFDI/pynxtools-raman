@@ -1,3 +1,4 @@
+DeprecationWarning: 'dataconverter' is deprecated. Use 'pynx convert' instead.
 Using raman reader to convert the given files:  
 • ./rod_file_1000679.rod
 WARNING: No axis name corresponding to the path _[local]_chemical_compound_state.

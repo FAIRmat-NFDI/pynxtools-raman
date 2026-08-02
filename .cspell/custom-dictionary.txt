@@ -1,4 +1,6 @@
 # Custom Dictionary Words
+Amalberti
+Appl
 Brockhauser
 CHTTP
 Dobener
@@ -8,8 +10,10 @@ Forschungsgemeinschaft
 Grundmann
 Heiko
 Hildebrandt
+Kanzaki
 Lukas
 MONOCHROMATOR
+Mendili
 Mozumder
 Multiformat
 Pielsticker
@@ -18,15 +22,20 @@ Sandor
 Sturm
 WITec
 Xraman
+Zhang
 alphabetagamma
 axisnames
 caplog
 convertable
+cymrite
 dataconverter
 ellips
 gemmi
 iupac
+jmps
+kokchetavite
 longname
+metainfo
 monochromator
 multiformat
 mydata

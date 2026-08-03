@@ -43,3 +43,17 @@ Take a look at the file: "download_all_rod_files_script.sh"
 ## Call the script
 `./src/download_rod_files/convert_all_rod_to_nxs.sh`
 
+# Preparing the NOMAD upload
+
+Before zipping the converted `.nxs` files for upload, generate the
+`nomad.json` metadata file into the same directory. NOMAD reads a
+`nomad.json`/`nomad.yaml` bundled inside an upload's own files as *user
+metadata* (comment, references, ...) applied to every entry beneath it --
+this is unrelated to a NOMAD deployment's own `nomad.yaml` configuration
+file, which is why `nomad.json` is used here to avoid the naming collision.
+This file carries the ROD-wide citation (El Mendili et al. 2019) and the
+CC0 1.0 license notice; the individual publication/ROD-record citations are
+written into each `.nxs` file directly by the reader.
+
+`generate_rod_upload_metadata <PATH_TO_UPLOAD_DIR>`
+

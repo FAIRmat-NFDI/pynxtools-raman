@@ -225,7 +225,7 @@ raman_app = AppEntryPoint(
                     "quantity": f"data.instrument.beam_TYPE.incident_wavelength#{schema}#float",
                     "title": "Incident Wavelength [nm]",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 5, "w": 8, "y": 0, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 0, "x": 0}
                     },
                 },
                 {
@@ -237,7 +237,7 @@ raman_app = AppEntryPoint(
                     "quantity": f"data.instrument.beam_TYPE.average_power#{schema}#float",
                     "title": "Laser Power [mW]",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 8, "y": 5, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 3, "x": 0}
                     },
                 },
                 {
@@ -269,6 +269,30 @@ raman_app = AppEntryPoint(
                 # unconditionally skips any array-shaped quantity
                 # (elasticsearch_extension.create_dynamic_quantity_annotation),
                 # so it cannot be used as a search_quantity/quantity target.
+                {
+                    "type": "histogram",
+                    "show_input": False,
+                    "autorange": True,
+                    "nbins": 30,
+                    "scale": "log",
+                    "quantity": f"data.instrument.beam_incident.extent#{schema}#float",
+                    "title": "Beam Diameter [µm]",
+                    "layout": {
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 6, "y": 6, "x": 8}
+                    },
+                },
+                {
+                    "type": "histogram",
+                    "show_input": False,
+                    "autorange": True,
+                    "nbins": 30,
+                    "scale": "log",
+                    "quantity": f"data.sample.temperature_env.sensor.value#{schema}#float",
+                    "title": "Sample Temperature [K]",
+                    "layout": {
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 6, "x": 0}
+                    },
+                },
             ]
         },
     ),

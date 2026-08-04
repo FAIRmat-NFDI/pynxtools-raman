@@ -197,11 +197,11 @@ cython_debug/
 .pyenv
 *.pyc
 *.txt
-!src/download_rod_files/*.txt
+# Default rod download directory
+rod_batch/
 !tests/data/witec/*.txt
 !examples/witec/txt/*.txt
 !tests/data/rod/*.txt
 build/
-nexusparser.egg-info/PKG-INFO
 +.python-version
 +!.cspell/custom-dictionary.txt

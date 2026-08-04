@@ -1,15 +1,34 @@
-import argparse
 import logging
+from pathlib import Path
 
 import requests
 
-logger = logging.getLogger("pynxtools")
+logger = logging.getLogger(__file__)
 
-rod_id = 1000679
+DEFAULT_ROD_BATCH_DIR = Path("rod_batch")
+"""Shared default directory across all pynx-raman ROD sub-commands
+(download, build-upload-batch, analyze-keys), so they default to the same
+place instead of scattering files across the current directory."""
 
 
-def save_rod_file_from_ROD_via_API(rod_id: int):
+def save_rod_file_from_ROD_via_API(
+    rod_id: int, output_dir: Path | None = None
+) -> Path | None:
+    """Download a .rod file from the Raman Open Database.
+
+    Args:
+        rod_id (int): ROD record ID to download.
+        output_dir (Path, optional): Directory to write the .rod file
+            into. Created if it doesn't exist yet. Defaults to the
+            current directory.
+
+    Returns:
+        Optional[Path]: Path of the downloaded file, or None if the
+            download failed (the error is logged, not raised).
+    """
     url = "https://solsa.crystallography.net/rod/" + str(rod_id) + ".rod"
+    output_dir = output_dir or Path()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Initialized download of .rod file with ID '{rod_id}' from '{url}'.")
 
@@ -19,11 +38,10 @@ def save_rod_file_from_ROD_via_API(rod_id: int):
 
         logger.info(f"Successfully received .rod file with ID '{rod_id}'")
 
-        filename = str(rod_id)
-
-        with open(filename + ".rod", "w", encoding="utf-8") as file:
-            file.write(response.text)
-        logger.info(f"Saved .rod file with ID '{rod_id}' to file '{filename}'")
+        file_path = output_dir / f"{rod_id}.rod"
+        file_path.write_text(response.text, encoding="utf-8")
+        logger.info(f"Saved .rod file with ID '{rod_id}' to file '{file_path}'")
+        return file_path
 
     except requests.exceptions.ConnectionError as con_err:
         logger.error(f"ConnectionError occurred: {con_err}")
@@ -31,18 +49,4 @@ def save_rod_file_from_ROD_via_API(rod_id: int):
         logger.error(f"CHTTPError occurred: {http_err}")
     except requests.exceptions.RequestException as req_exc:
         logger.error(f"RequestException occurred: {req_exc}")
-
-
-def trigger_rod_download():
-    # Create an argument parser
-    parser = argparse.ArgumentParser(description="Download a CIF file.")
-    parser.add_argument(
-        "rod_id",  # The argument's name
-        type=str,  # Argument type (e.g., string)
-        help="The name of the file to download",  # Help message
-    )
-
-    # Parse the command-line arguments
-    args = parser.parse_args()
-
-    save_rod_file_from_ROD_via_API(args.rod_id)
+    return None

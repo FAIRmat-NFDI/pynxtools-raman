@@ -21,18 +21,14 @@ NeXus files.
 NOMAD reads a nomad.json/nomad.yaml bundled inside an upload's own raw files
 (at any directory level) as *user metadata* -- comment, references,
 coauthors, datasets, per-entry overrides -- applied during the initial
-processing of the entries beneath it. This is unrelated to a NOMAD
-deployment's own nomad.yaml configuration file, which lives outside any
-upload; nomad.json is used here specifically to avoid that naming collision.
-See "Add user metadata" in the NOMAD documentation.
+processing of the entries beneath it. nomad.json is used here specifically
+to avoid naming collisions with a NOMAD deployment's nomad.yaml.
 
 This file carries the ROD-wide (dataset-level) citation and license. It is
 distinct from the per-entry citeID(NXcite) groups written into each .nxs
-file by build_citation_fields(), which cite the individual publication and
-ROD record.
+file, which cite the individual publication and ROD record.
 """
 
-import argparse
 import json
 from pathlib import Path
 
@@ -68,27 +64,3 @@ def write_nomad_json(output_dir: Path) -> Path:
         json.dumps(UPLOAD_METADATA, indent=2) + "\n", encoding="utf-8"
     )
     return output_path
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Write the nomad.json upload metadata file (ROD-wide citation "
-            "and CC0 license) into the directory a ROD batch will be "
-            "uploaded from."
-        )
-    )
-    parser.add_argument(
-        "output_dir",
-        nargs="?",
-        default=Path(),
-        type=Path,
-        help="Directory to write nomad.json into (default: current directory).",
-    )
-    args = parser.parse_args()
-    output_path = write_nomad_json(args.output_dir)
-    print(f"Wrote upload metadata to {output_path}")
-
-
-if __name__ == "__main__":
-    main()

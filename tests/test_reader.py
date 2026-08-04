@@ -56,8 +56,8 @@ for test_case in test_cases:
     "nxdl, sub_reader_data_dir, ignore_lines, ignore_sections",
     test_params,
 )
-def test_nexus_conversion(
-    *, nxdl, sub_reader_data_dir, ignore_lines, ignore_sections, tmp_path, caplog
+def test_nexus_conversion(  # noqa: PLR0917
+    nxdl, sub_reader_data_dir, ignore_lines, ignore_sections, tmp_path, caplog
 ):
     """
     Test Raman reader

@@ -1,5 +1,6 @@
 # Custom Dictionary Words
 Amalberti
+Analysing
 Appl
 Brockhauser
 CHTTP
@@ -17,6 +18,7 @@ Mendili
 Mozumder
 Multiformat
 Pielsticker
+Pynx
 Raman
 Sandor
 Sturm
@@ -24,6 +26,7 @@ WITec
 Xraman
 Zhang
 alphabetagamma
+analyse
 axisnames
 caplog
 convertable
@@ -44,6 +47,7 @@ nexus
 nxdls
 orcid
 polfilter
+pynx
 pynxtools
 raman
 ramanapp

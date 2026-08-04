@@ -43,13 +43,13 @@ You see three Folders:
 for the WITec dataset via:
 
 ```shell
-dataconverter examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output new_witec_example_nexus.nxs
+pynx convert examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt src/pynxtools_raman/config/config_file_witec.json --reader raman --nxdl NXraman --output new_witec_example_nexus.nxs
 ```
 
 and for the Raman Open Database dataset set via:
 
 ```shell
-dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output new_rod_example_nexus.nxs
+pynx convert examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output new_rod_example_nexus.nxs
 ```
 
 **For Example for the Raman Open Database command:**

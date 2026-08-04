@@ -6,7 +6,7 @@ This shows two examples in which `.rod` files from the [Raman Open Database (ROD
 - Go into the root folder of this repository (default `pynxtools-raman`)
 - Copy and paste:
     ```
-    dataconverter examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output examples/database/rod/rod_example_nexus.nxs
+    pynx convert examples/database/rod/rod_file_1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output examples/database/rod/rod_example_nexus.nxs
     ```
 - Inspect the created NeXus file. Some warnings may be present.
 
@@ -17,10 +17,10 @@ This shows two examples in which `.rod` files from the [Raman Open Database (ROD
 
 **Convert single file**
 
-Using the [pynxtools dataconverter](https://fairmat-nfdi.github.io/pynxtools/learn/dataconverter-and-readers.html) with the pynxtools-raman reader plugin:
+Using the [`pynxtools dataconverter`](https://fairmat-nfdi.github.io/pynxtools/learn/dataconverter-and-readers.html) with the pynxtools-raman reader plugin:
 
 ```shell
-dataconverter <PATH_TO>/1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output rod_example_nexus.nxs
+pynx convert <PATH_TO>/1000679.rod src/pynxtools_raman/config/config_file_rod.json --reader raman --nxdl NXraman --output rod_example_nexus.nxs
 ```
 
 

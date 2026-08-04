@@ -23,7 +23,8 @@ classifiers = [
 dependencies = [
     "pynxtools>=0.13.0",
     "gemmi>=0.6.7",
-    "requests"
+    "requests",
+    "click"
 ]
 
 [project.optional-dependencies]
@@ -60,7 +61,7 @@ raman = "pynxtools_raman.reader:RamanReader"
 raman_app = "pynxtools_raman.nomad.apps:raman_app"
 
 [project.scripts]
-download_rod_file = "pynxtools_raman.rod.rod_get_file:trigger_rod_download"
+pynx-raman = "pynxtools_raman.cli:pynx_raman"
 
 [tool.uv]
 extra-index-url = [
@@ -73,7 +74,7 @@ where = [
 ]
 
 [tool.setuptools.package-data]
-pynxtools_raman = ["*.json"]
+pynxtools_raman = ["*.json", "rod/data/*.txt"]
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"

@@ -9,17 +9,25 @@ nav:
   - Home: index.md
   - Tutorials:
     - tutorial/installation.md
+    - tutorial/convert_your_first_dataset.md
     - tutorial/contributing.md
-    - tutorial/adjust_config_file.md
   - How-tos:
-    - how-tos/installation.md
     - how-tos/convert_data.md
-    - how-tos/download_rod.md
-  - Learning:
+    - how-tos/adjust_the_config_file.md
+    - how-tos/build_a_rod_upload_batch.md
+    - how-tos/search_raman_data_in_nomad.md
+  - Learn:
+    - learn/application_definitions.md
+    - learn/architecture.md
+    - learn/readers.md
+    - learn/nomad_integration.md
+    - learn/rod_database_in_nomad.md
     - learn/versioning.md
   - Reference:
+    - reference/cli.md
     - reference/witec.md
     - reference/rod.md
+    - reference/app.md
 
 plugins:
   - search

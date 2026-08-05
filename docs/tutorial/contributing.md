@@ -1,62 +1,57 @@
 # Development guide
 
-This tutorial will guide you through on how to set up a working environment for developing `pynxtools-raman`.
+This tutorial walks you through setting up a working environment for developing `pynxtools-raman` itself.
+
+## Who is this tutorial for?
+
+Anyone who wants to fix a bug, add a reader, or otherwise change the `pynxtools-raman` source code.
 
 ## What should you know before this tutorial?
 
-- You should read the [guide on getting started with `pynxtools`](https://fairmat-nfdi.github.io/pynxtools/getting-started.html).
-- You should read the [installation tutorial](installation.md).
+- The [guide on getting started with `pynxtools`](https://fairmat-nfdi.github.io/pynxtools/getting-started.html){:target="_blank" rel="noopener"}.
+- The [installation tutorial](installation.md).
 
-## What you will know at the end of this tutorial?
+## What will you know at the end of this tutorial?
 
-You will know
+- How to set up your environment for developing `pynxtools-raman`.
+- How to run the tests and the linters.
+- How to build the documentation locally.
+- How to contribute your changes on GitHub.
 
-- how to setup your environment for developing `pynxtools-raman`
-- how to make changes to the software
-- how to test the software
-- how to contribute on GitHub
-- how to use `pynxtools-raman` as a NOMAD plugin
+??? info "Structure of the repository"
+    The source code lives in `src/pynxtools_raman`, split into `reader.py` (the top-level reader dispatched by `pynxtools`), `witec/` and `rod/` (the format-specific sub-readers and the `pynx-raman` CLI), and `config/` (the JSON mapping files). Unit tests live in `tests`, mirroring that structure. `examples/` holds small example datasets used in the tutorials and in the tests.
 
-## Contributing
+## Setup
 
-??? info "Structure of the `pynxtools-raman` repository"
-    The software tools are located inside `src/pynxtools_raman`. They are shipped with unit tests located in `tests`.
-
-### Setup
-
-It is recommended to use python 3.12 with a dedicated virtual environment for this package. Learn how to manage [python versions](https://github.com/pyenv/pyenv) and [virtual environments](https://realpython.com/python-virtual-environments-a-primer/). We recommend using [`uv`](https://github.com/astral-sh/uv), an extremely fast Python package and project manager. In this tutorial, you will find paralleled descriptions, using either `uv` or a more classical approach using `venv` and `pip`.
+It is recommended to use Python 3.12 with a dedicated virtual environment. Learn how to manage [Python versions](https://github.com/pyenv/pyenv){:target="_blank" rel="noopener"} and [virtual environments](https://realpython.com/python-virtual-environments-a-primer/){:target="_blank" rel="noopener"}. We recommend [`uv`](https://github.com/astral-sh/uv){:target="_blank" rel="noopener"}; below you'll also find the equivalent `venv`/`pip` commands.
 
 Start by creating a virtual environment:
 
 === "uv"
-    `uv` is capable of creating a virtual environment and install the required Python version at the same time.
-
     ```bash
     uv venv --python 3.12
     ```
 
 === "venv"
 
-    Note that you will need to install the Python version manually beforehand.
+    You need to have that Python version installed already.
 
     ```bash
     python -m venv .venv
     ```
 
-That command creates a new virtual environment in a directory called .venv.
-
 ### Development installation
 
-We start by cloning the repository:
+[Fork the repository](https://github.com/FAIRmat-NFDI/pynxtools-raman/fork){:target="_blank" rel="noopener"} on GitHub, then clone your fork:
 
 ```console
-git clone https://github.com/FAIRmat-NFDI/pynxtools-raman.git \\
-    --branch main \\
+git clone https://github.com/<your-username>/pynxtools-raman.git \
+    --branch main \
     --recursive pynxtools-raman
 cd pynxtools-raman
 ```
 
-Next, we install the package in editable mode (together with its dependencies):
+Install the package in editable mode, together with its development dependencies:
 
 === "uv"
 
@@ -66,8 +61,6 @@ Next, we install the package in editable mode (together with its dependencies):
 
 === "pip"
 
-    Note that you will need to install the Python version manually beforehand.
-
     ```bash
     pip install --upgrade pip
     pip install -e ".[dev]"
@@ -75,19 +68,15 @@ Next, we install the package in editable mode (together with its dependencies):
 
 ### Linting and formatting
 
-We are using ruff and mypy for linting, formatting, and type checking. It is recommended to use the [pre-commit hook](https://pre-commit.com/#intro) available for ruff which formats the code and checks the linting before making a Git commit.
-
-Install the precommit by running
+We use `ruff` and `mypy` for linting, formatting, and type checking. Install the pre-commit hook so both run automatically before every commit:
 
 ```console
 pre-commit install
 ```
 
-from the root of this repository.
-
 ### Testing
 
-There exist unit tests for the software written in [pytest](https://docs.pytest.org/en/stable/) which can be used as follows:
+Tests are written with [pytest](https://docs.pytest.org/en/stable/){:target="_blank" rel="noopener"}:
 
 ```console
 pytest -sv tests
@@ -95,7 +84,7 @@ pytest -sv tests
 
 ### Editing the documentation
 
-We are using [`mkdocs](https://www.mkdocs.org/) for the documentation. If you edit the documentation, you can build it locally. For this, you need to install an additional set of dependencies:
+Documentation is built with [`mkdocs`](https://www.mkdocs.org/){:target="_blank" rel="noopener"} and the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/){:target="_blank" rel="noopener"} theme. Install the extra dependencies for it:
 
 === "uv"
 
@@ -108,20 +97,31 @@ We are using [`mkdocs](https://www.mkdocs.org/) for the documentation. If you ed
     ```bash
     pip install -e ".[docs]"
     ```
-You can then serve the documentation locally by running
+
+Then serve the docs locally, with live reload on save:
 
 ```console
 mkdocs serve
 ```
 
-### Contributing to the package on GitHub
+The config lives in `mkdocs.yaml` at the repository root; new pages need to be added to its `nav` section to show up in the sidebar.
 
-Once you are happy with the changes, please commit them on a separate branch and create a pull request on GitHub. We run a number of GitHub actions that check the correct linting, run the tests in an isolated environment, and build the documentation. Once these pass and a peer review of the code has occurred, your code will be accepted.
+### Contributing on GitHub
+
+Before making changes, pull the latest `main` into your fork and branch off it (or rebase), so your pull request doesn't drag in unrelated history:
+
+```console
+git checkout main
+git pull origin main
+git checkout -b my-feature-branch
+```
+
+Once you're happy with your changes, commit them on that branch, push it to your fork, and open a pull request from there against `FAIRmat-NFDI/pynxtools-raman`'s `main` branch. CI runs linting, the test suite, and a documentation build; once those pass and a review has happened, your change gets merged.
 
 ## Developing `pynxtools-raman` as a NOMAD plugin
 
-If you plan to contribute to the NOMAD plugin functionality of pynxtools-raman, it often makes sense to use the NOMAD development environment called `nomad-distro-dev`. You can learn more in the [NOMAD documentation](https://nomad-lab.eu/prod/v1/staging/docs/howto/develop/setup.html#nomad-distro-dev-development-environment-for-the-core-nomad-package-and-nomad-plugins).
+If you're working on the NOMAD integration (the [Raman app](../reference/app.md) or the metainfo schema), it's usually easiest to do that inside [`nomad-distro-dev`](https://github.com/FAIRmat-NFDI/nomad-distro-dev){:target="_blank" rel="noopener"}, NOMAD's own development distribution — see the [NOMAD documentation](https://nomad-lab.eu/prod/v1/docs/howto/develop/setup.html#nomad-distro-dev-development-environment-for-the-core-nomad-package-and-nomad-plugins){:target="_blank" rel="noopener"} for how to set it up.
 
 ## Troubleshooting
 
-If you face any issues with the tool or when setting up the development environment, please create a new [Github Issue](https://github.com/FAIRmat-NFDI/pynxtools-raman/issues/new?template=bug.yaml).
+If you get stuck, open a [GitHub issue](https://github.com/FAIRmat-NFDI/pynxtools-raman/issues/new?template=bug.yaml){:target="_blank" rel="noopener"}.

@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-
 from packaging.version import InvalidVersion, Version
 
 from pynxtools_raman import get_pynxtools_raman_version

@@ -15,22 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Tests for the ROD (.rod / CIF-based) reader utilities."""
+"""Tests for the ROD (.rod / CIF-based) parser."""
 
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
-from pynxtools_raman.rod.rod_reader import (
+from pynxtools_raman.parsers.rod import (
     RodParser,
     _join_authors,
     _strip_cif_quotes,
     build_citation_fields,
-    post_process_rod,
 )
 
-ROD_FIXTURE = Path(__file__).parent / "data" / "rod" / "rod_file_1000679.rod"
+ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
+WITEC_FIXTURE = (
+    Path(__file__).parents[1] / "data" / "witec" / "Si-wafer-Raman-Spectrum-1.txt"
+)
 
 
 @pytest.fixture(scope="module")
@@ -219,47 +220,57 @@ class TestBuildCitationFields:
         assert "119" in fields["rod_citation_publication_description"]
 
 
+class TestRodParserMatchesFile:
+    def test_matches_real_rod_fixture(self):
+        assert RodParser.is_mainfile(ROD_FIXTURE) is True
+
+    def test_does_not_match_witec_fixture(self):
+        assert RodParser.is_mainfile(WITEC_FIXTURE) is False
+
+    def test_does_not_match_nonexistent_file(self, tmp_path):
+        assert RodParser.is_mainfile(tmp_path / "does_not_exist.rod") is False
+
+
 class TestPostProcessRod:
-    """post_process_rod is bound to a RamanReader instance in reader.py; here
-    it is exercised directly against a minimal stand-in object exposing the
-    same `raman_data`/`missing_meta_data` attributes.
+    """RodParser.post_process, exercised directly against a parser instance
+    with attrs/unused_attrs set up by hand rather than via a real .rod file.
     """
 
-    def _fake_reader(self, **raman_data) -> SimpleNamespace:
-        return SimpleNamespace(
-            raman_data=dict(raman_data),
-            missing_meta_data=dict(raman_data),
-        )
+    def _parser_with_attrs(self, **attrs) -> RodParser:
+        parser = RodParser()
+        parser.attrs = dict(attrs)
+        parser.unused_attrs = dict(attrs)
+        return parser
 
     def test_wavelength_and_resolution_are_converted_to_nm(self):
-        fake = self._fake_reader(
+        parser = self._parser_with_attrs(
             **{
                 "_raman_measurement_device.excitation_laser_wavelength": "488",
                 "_raman_measurement_device.resolution": "1",
             }
         )
 
-        post_process_rod(fake)
+        parser.post_process(eln_data={})
 
         assert (
-            fake.raman_data[
+            parser.attrs[
                 "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/physical_quantity"
             ]
             == "wavelength"
         )
-        assert fake.raman_data[
+        assert parser.attrs[
             "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution"
         ] == pytest.approx(0.0238144)
         assert (
-            fake.raman_data[
+            parser.attrs[
                 "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution/@units"
             ]
             == "nm"
         )
-        assert "_raman_measurement_device.resolution" not in fake.missing_meta_data
+        assert "_raman_measurement_device.resolution" not in parser.unused_attrs
 
     def test_diffraction_grating_is_converted_to_period(self):
-        fake = self._fake_reader(
+        parser = self._parser_with_attrs(
             **{
                 "_raman_measurement_device.excitation_laser_wavelength": "488",
                 "_raman_measurement_device.resolution": "1",
@@ -267,23 +278,23 @@ class TestPostProcessRod:
             }
         )
 
-        post_process_rod(fake)
+        parser.post_process(eln_data={})
 
-        assert fake.raman_data[
+        assert parser.attrs[
             "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period"
         ] == pytest.approx(1 / 1200)
 
     def test_no_diffraction_grating_key_added_when_absent(self):
-        fake = self._fake_reader(
+        parser = self._parser_with_attrs(
             **{
                 "_raman_measurement_device.excitation_laser_wavelength": "488",
                 "_raman_measurement_device.resolution": "1",
             }
         )
 
-        post_process_rod(fake)
+        parser.post_process(eln_data={})
 
         assert (
             "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period"
-            not in fake.raman_data
+            not in parser.attrs
         )

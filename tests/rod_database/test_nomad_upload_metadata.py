@@ -19,11 +19,11 @@
 
 import json
 
-from pynxtools_raman.rod.nomad_upload_metadata import (
+from pynxtools_raman.parsers.rod import ROD_CITATION_DOI, ROD_LICENSE_TEXT
+from pynxtools_raman.rod_database.nomad_upload_metadata import (
     ROD_CITING_WIKI_URL,
     write_nomad_json,
 )
-from pynxtools_raman.rod.rod_reader import ROD_CITATION_DOI, ROD_LICENSE_TEXT
 
 
 def test_write_nomad_json_creates_file_with_expected_name(tmp_path):

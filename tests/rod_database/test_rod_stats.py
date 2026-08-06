@@ -23,10 +23,10 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from pynxtools_raman.rod.rod_get_file import DEFAULT_ROD_BATCH_DIR
-from pynxtools_raman.rod.rod_stats import analyze_rod_keys, count_rod_keys
+from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR
+from pynxtools_raman.rod_database.rod_stats import analyze_rod_keys, count_rod_keys
 
-ROD_FIXTURE = Path(__file__).parent / "data" / "rod" / "rod_file_1000679.rod"
+ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
 
 
 @pytest.fixture()

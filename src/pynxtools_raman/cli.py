@@ -31,8 +31,11 @@ the same directory (rod_batch) and writes its report there too.
 
 import click
 
-from pynxtools_raman.rod.rod_batch import build_rod_upload_batch, download_rod_files_cli
-from pynxtools_raman.rod.rod_stats import analyze_rod_keys
+from pynxtools_raman.rod_database.rod_batch import (
+    build_rod_upload_batch,
+    download_rod_files_cli,
+)
+from pynxtools_raman.rod_database.rod_stats import analyze_rod_keys
 
 
 @click.group()

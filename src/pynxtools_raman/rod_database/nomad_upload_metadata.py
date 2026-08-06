@@ -32,7 +32,7 @@ file, which cite the individual publication and ROD record.
 import json
 from pathlib import Path
 
-from pynxtools_raman.rod.rod_reader import (
+from pynxtools_raman.parsers.rod import (
     ROD_CITATION_DOI,
     ROD_CITATION_TEXT,
     ROD_LICENSE_TEXT,

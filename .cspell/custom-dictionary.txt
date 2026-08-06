@@ -1,4 +1,5 @@
 # Custom Dictionary Words
+AXISNAME
 Amalberti
 Analysing
 Appl
@@ -46,6 +47,7 @@ jmps
 kokchetavite
 longname
 lukaspie
+mainfile
 metainfo
 monochromator
 multiformat

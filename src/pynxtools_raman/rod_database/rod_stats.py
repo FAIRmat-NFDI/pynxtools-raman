@@ -26,8 +26,8 @@ from pathlib import Path
 
 import click
 
-from pynxtools_raman.rod.rod_get_file import DEFAULT_ROD_BATCH_DIR
-from pynxtools_raman.rod.rod_reader import RodParser
+from pynxtools_raman.parsers.rod import RodParser
+from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR
 
 
 def count_rod_keys(rod_dir: Path) -> dict[str, int]:

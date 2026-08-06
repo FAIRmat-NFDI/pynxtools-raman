@@ -1,14 +1,14 @@
 # WITec Alpha reader
 
-Reads `.txt` exports from WITec Alpha Raman spectrometers, combined with a separately supplied ELN file for everything the raw export doesn't carry. See [Learn > The WITec and ROD readers](../learn/readers.md#the-witec-sub-reader) for what the reader actually does with the data, and [How-to > Adjust the config file](../how-tos/adjust_the_config_file.md) for customizing the mapping.
+Reads `.txt` exports from WITec Alpha Raman spectrometers, combined with a separately supplied ELN file for the instrument/sample/user metadata the raw export doesn't carry. See [Learn > The WITec and ROD parsers](../learn/readers.md#the-witec-parser) for what the parser actually does with the data, and [How-to > Adjust the config file](../how-tos/adjust_the_config_file.md) for customizing the mapping.
 
 ## Supported format
 
 | Format | Extension | Parser | Source |
 | ------ | --------- | ------ | ------ |
-| WITec Alpha ASCII export | `.txt` | `parse_txt_file` | `src/pynxtools_raman/witec/witec_reader.py` |
+| WITec Alpha ASCII export | `.txt` | `WitecParser` | `src/pynxtools_raman/parsers/witec.py` |
 
-The parser reads the `[Data]` section of the export (comma-separated wavelength/intensity pairs) into `data/x_values` and `data/y_values`. The `[Header]` section is not parsed; that metadata must be supplied via the ELN file.
+The parser reads the `[Data]` section of the export (comma-separated wavelength/intensity pairs) into `data/x_values` and `data/y_values`, and the `[Header]` section into scalar metadata (`XAxisUnit`, `DataUnit`, `PositionX`/`Y`/`Z`, `FileName`, `GraphName`, `SizeX`/`Y`/`Graph`, ...). `XAxisUnit` and `DataUnit` are mapped directly onto the data axes' `@units` attributes (see [Config file](#config-file) below); the rest currently has no `NXraman` home and lands in `COLLECTION[unused_witec_keys]`, same treatment as unmapped ROD CIF keys get — not dropped, just not (yet) structured.
 
 ## Example data
 
@@ -22,7 +22,7 @@ See [Tutorial > Convert your first Raman dataset](../tutorial/convert_your_first
 
 ## Config file
 
-[`config_file_witec.json`](https://github.com/FAIRmat-NFDI/pynxtools-raman/blob/main/src/pynxtools_raman/config/config_file_witec.json){:target="_blank" rel="noopener"} maps almost every `NXraman` concept to `"@eln"` — meaning the value comes directly from the ELN file you supply, at the path derived from the NeXus concept path itself (see [Learn > Reader architecture](../learn/architecture.md#config-file-values-select-where-the-data-comes-from)). The exceptions are the spectrum data (`data/x_values`, `data/x_values_raman`, `data/y_values`), which come from the parsed `.txt` file, and the Raman shift axis, which the reader computes rather than reading directly (see [Learn > The WITec and ROD readers](../learn/readers.md#the-witec-sub-reader)).
+[`config_file_witec.json`](https://github.com/FAIRmat-NFDI/pynxtools-raman/blob/main/src/pynxtools_raman/config/config_file_witec.json){:target="_blank" rel="noopener"} maps most `NXraman` concepts to `"@eln"` — meaning the value comes directly from the ELN file you supply, at the path derived from the NeXus concept path itself (see [Learn > Reader architecture](../learn/architecture.md#config-file-values-select-where-the-data-comes-from)). The exceptions: the spectrum data (`data/x_values`, `data/x_values_raman`, `data/y_values`) and the two axis `@units` (`@attrs:XAxisUnit`, `@attrs:DataUnit`) come from the parsed `.txt` file rather than the ELN, and the Raman shift axis is computed by the parser rather than read directly from either source (see [Learn > The WITec and ROD parsers](../learn/readers.md#the-witec-parser)).
 
 ## Known warnings
 

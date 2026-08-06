@@ -19,7 +19,7 @@ Anyone who wants to fix a bug, add a reader, or otherwise change the `pynxtools-
 - How to contribute your changes on GitHub.
 
 ??? info "Structure of the repository"
-    The source code lives in `src/pynxtools_raman`, split into `reader.py` (the top-level reader dispatched by `pynxtools`), `witec/` and `rod/` (the format-specific sub-readers and the `pynx-raman` CLI), and `config/` (the JSON mapping files). Unit tests live in `tests`, mirroring that structure. `examples/` holds small example datasets used in the tutorials and in the tests.
+    The source code lives in `src/pynxtools_raman`, split into `reader.py` (the top-level reader dispatched by `pynxtools`), `parsers/` (the parser classes and their shared base), `rod_database/` (the `pynx-raman` CLI for downloading and batch-converting Raman Open Database records — not to be confused with `parsers/rod.py`, the single-file `.rod` parser), and `config/` (the JSON mapping files). Unit tests live in `tests`, mirroring that structure. `examples/` holds small example datasets used in the tutorials and in the tests.
 
 ## Setup
 

@@ -17,22 +17,14 @@
 #
 """An example reader implementation based on the MultiFormatReader."""
 
-import copy
-import datetime
 import logging
-import re
 from pathlib import Path
 from typing import Any
 
 from pynxtools.dataconverter.readers.multi.reader import MultiFormatReader
 from pynxtools.dataconverter.readers.utils import parse_yml
 
-from pynxtools_raman.rod.rod_reader import (
-    RodParser,
-    build_citation_fields,
-    post_process_rod,
-)
-from pynxtools_raman.witec.witec_reader import parse_txt_file, post_process_witec
+from pynxtools_raman.parsers import RodParser, WitecParser, _RamanParser
 
 logger = logging.getLogger("pynxtools")
 
@@ -49,12 +41,14 @@ class RamanReader(MultiFormatReader):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.raman_data_dicts: list[dict[str, Any]] = []
-        self.raman_data: dict[str, Any] = {}
+        self.attrs: dict[str, Any] = {}
+        self.data: dict[str, Any] = {}
         self.eln_data: dict[str, Any] = {}
         self.config_file: Path
 
-        self.missing_meta_data = None
+        self.missing_meta_data: dict[str, Any] | None = None
+        self._active_parser: _RamanParser | None = None
+        self._unused_attrs_group_name: str | None = None
 
         self.extensions = {
             ".yml": self.handle_eln_file,
@@ -81,127 +75,52 @@ class RamanReader(MultiFormatReader):
 
         return {}
 
-    def handle_rod_file(self, filepath) -> dict[str, Any]:
-        # specify default config file for rod files
+    def _set_parser_data(self, parser) -> None:
+        """Populate reader state from a parsed file."""
         reader_dir = Path(__file__).parent
-        self.config_file = reader_dir.joinpath("config", "config_file_rod.json")  # pylint: disable=invalid-type-comment
+        self.config_file = reader_dir.joinpath("config", parser.config_file)  # pylint: disable=invalid-type-comment
+        self._active_parser = parser
+        self._unused_attrs_group_name = parser.unused_attrs_group_name
+        self.attrs = parser.attrs
+        self.data = parser.data
+        self.missing_meta_data = parser.unused_attrs
 
-        rod = RodParser()
-        # read the rod file
-        rod.get_cif_file_content(filepath)
-        # get the key and value pairs from the rod file
-        self.raman_data = rod.extract_keys_and_values_from_cif()
+    def handle_rod_file(self, filepath) -> dict[str, Any]:
+        """
+        Read a .rod file (Raman Open Database) via RodParser.
+        """
+        if not RodParser.is_mainfile(filepath):
+            logger.warning(f"{filepath} does not look like a ROD .rod file; skipping.")
+            return {}
 
-        if self.raman_data.get("_raman_theoretical_spectrum.intensity"):
+        parser = RodParser()
+        parser.parse(filepath)
+
+        if parser.attrs.get("_raman_theoretical_spectrum.intensity"):
             logger.warning(
-                f"Theoretical Raman Data .rod file found. File parsing aborted."
+                "Theoretical Raman data .rod file found. File parsing aborted."
             )
-            # prevent file parsing to setting an invalid config file name.
+            # Prevent file parsing from setting an invalid config file name.
             self.config_file = Path()
+            return {}
 
-        # unit_cell_alphabetagamma
-        # replace the [ and ] to avoid conflicts in processing with pynxtools NXclass assignments
-        self.raman_data = {
-            key.replace("_[local]_", "_local_"): value
-            for key, value in self.raman_data.items()
-        }
-
-        self.missing_meta_data = copy.deepcopy(self.raman_data)
-
-        self.raman_data.update(build_citation_fields(self.raman_data))
-        for consumed_key in (
-            "_publ_author_name",
-            "_publ_section_title",
-            "_journal_name_full",
-            "_journal_volume",
-            "_journal_page_first",
-            "_journal_page_last",
-            "_journal_year",
-        ):
-            self.missing_meta_data.pop(consumed_key, None)
-
-        if self.raman_data.get("_cod_database_code") is not None or "":
-            self.raman_data["COD_service_name"] = "Crystallography Open Database"
-            del self.missing_meta_data["_cod_database_code"]
-
-        if self.raman_data.get("_cell_length_a") is not None or "":
-            # transform 9.40(3) to 9.40
-            length_a = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_a"))
-            length_b = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_b"))
-            length_c = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_length_c"))
-            self.raman_data["rod_unit_cell_length_abc"] = [
-                float(length_a),
-                float(length_b),
-                float(length_c),
-            ]
-            del self.missing_meta_data["_cell_length_a"]
-            del self.missing_meta_data["_cell_length_b"]
-            del self.missing_meta_data["_cell_length_c"]
-        if self.raman_data.get("_cell_angle_alpha") is not None or "":
-            # transform 9.40(3) to 9.40
-            angle_alpha = re.sub(
-                r"\(\d+\)", "", self.raman_data.get("_cell_angle_alpha")
-            )
-            angle_beta = re.sub(r"\(\d+\)", "", self.raman_data.get("_cell_angle_beta"))
-            angle_gamma = re.sub(
-                r"\(\d+\)", "", self.raman_data.get("_cell_angle_gamma")
-            )
-            self.raman_data["rod_unit_cell_angles_alphabetagamma"] = [
-                float(angle_alpha),
-                float(angle_beta),
-                float(angle_gamma),
-            ]
-            del self.missing_meta_data["_cell_angle_alpha"]
-            del self.missing_meta_data["_cell_angle_beta"]
-            del self.missing_meta_data["_cell_angle_gamma"]
-
-        # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
-        key_to_make_value_lower_case = "_raman_measurement.environment"
-        environment_name_str = self.raman_data.get(key_to_make_value_lower_case)
-        if environment_name_str is not None:
-            self.raman_data[key_to_make_value_lower_case] = environment_name_str.lower()
-
-        # transform the string into a datetime object
-        time_key = "_raman_measurement.datetime_initiated"
-        date_time_str = self.raman_data.get(time_key)
-        if date_time_str is not None:
-            date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
-            # assume UTC for .rod data, as this is not specified in detail
-            tzinfo = datetime.timezone.utc
-            if isinstance(date_time_obj, datetime.datetime):
-                if tzinfo is not None:
-                    # Apply the specified timezone to the datetime object
-                    date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
-
-                # assign the dictionary the corrected date format
-                self.raman_data[time_key] = date_time_obj.isoformat()
-
-        # remove capitalization
-        objective_type_key = "_raman_measurement_device.optics_type"
-        objective_type_str = self.raman_data.get(objective_type_key)
-        if objective_type_str is not None:
-            self.raman_data[objective_type_key] = objective_type_str.lower()
-            # set a valid raman NXDL value, but only if it matches one of the correct ones:
-            objective_type_list = ["objective", "lens", "glass fiber", "none"]
-            if self.raman_data.get(objective_type_key) not in objective_type_list:
-                self.raman_data[objective_type_key] = "other"
-
-        self.post_process = post_process_rod.__get__(self, RamanReader)
-
+        self._set_parser_data(parser)
         return {}
 
-    def handle_txt_file(self, filepath):
+    def handle_txt_file(self, filepath) -> dict[str, Any]:
         """
-        Read a .txt file from Witec Alpha Raman spectrometer and save the header and measurement data.
+        Read a .txt file from a WITec Alpha Raman spectrometer via WitecParser.
         """
+        if not WitecParser.is_mainfile(filepath):
+            logger.warning(
+                f"{filepath} does not look like a WITec .txt export; skipping."
+            )
+            return {}
 
-        # specify default config file
-        reader_dir = Path(__file__).parent
-        self.config_file = reader_dir.joinpath("config", "config_file_witec.json")  # pylint: disable=invalid-type-comment
+        parser = WitecParser()
+        parser.parse(filepath)
 
-        self.raman_data = parse_txt_file(self, filepath)
-        self.post_process = post_process_witec.__get__(self, RamanReader)
-
+        self._set_parser_data(parser)
         return {}
 
     def get_eln_data(self, key: str, path: str) -> Any:
@@ -256,17 +175,17 @@ class RamanReader(MultiFormatReader):
                 )
         return self.eln_data.get(key)
 
-    def get_data(self, key: str, path: str) -> Any:
+    def get_attr(self, key: str, path: str) -> Any:
         """
-        Returns the data from a .rod file (Raman Open Database), which was transferred into a dictionary.
+        Returns scalar metadata (instrument settings, sample info, ...) for
+        the "@attrs:" config file prefix, looked up in self.attrs.
         """
-
-        value = self.raman_data.get(path)
+        value = self.attrs.get(path)
 
         # this filters out the meta data, which is up to now only created for .rod files
 
         if (path is None or path == "") and key is not None:
-            return self.raman_data.get(key)
+            return self.attrs.get(key)
 
         if self.missing_meta_data:
             # this if condition is required, to only delete keys which are available by the data.
@@ -282,9 +201,26 @@ class RamanReader(MultiFormatReader):
                     return value
                 return float(value)
             except (ValueError, TypeError):
-                return self.raman_data.get(path)
+                return self.attrs.get(path)
         else:
             logger.warning(f"No axis name corresponding to the path {path}.")
+
+    def get_data(self, key: str, path: str) -> Any:
+        """
+        Returns measurement data (spectrum arrays) for the "@data:" config
+        file prefix, looked up in self.data. Unlike self.attrs, entries here
+        are never candidates for the unused-keys collection.
+        """
+        return self.data.get(path or key)
+
+    def post_process(self) -> None:
+        """
+        Runs once, after ALL input files (including the ELN) have been
+        processed, regardless of file order - see MultiFormatReader.read().
+        It runs the `post_process` hook of the active parser.
+        """
+        if self._active_parser is not None:
+            self._active_parser.post_process(self.eln_data)
 
     def read(
         self,
@@ -297,9 +233,10 @@ class RamanReader(MultiFormatReader):
         # set default data
 
         if self.missing_meta_data:
+            group = self._unused_attrs_group_name or "unused_data"
             for key in self.missing_meta_data:
                 template[
-                    f"/ENTRY[{self.callbacks.entry_name}]/COLLECTION[unused_rod_keys]/{key}"
+                    f"/ENTRY[{self.callbacks.entry_name}]/COLLECTION[{group}]/{key}"
                 ] = f"{self.missing_meta_data[key]}"
 
         template["/@default"] = "entry"

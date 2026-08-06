@@ -24,7 +24,7 @@ tests/test_rod_batch.py for CLI-level coverage.
 
 import requests
 
-from pynxtools_raman.rod import rod_get_file
+from pynxtools_raman.rod_database import rod_get_file
 
 
 def test_save_rod_file_writes_into_output_dir(tmp_path, monkeypatch):

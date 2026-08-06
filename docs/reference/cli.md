@@ -9,7 +9,7 @@ The generic `pynx convert` command (provided by `pynxtools`, not by this package
 Downloads a batch of `.rod` files from the Raman Open Database.
 
 ::: mkdocs-click
-    :module: pynxtools_raman.rod.rod_batch
+    :module: pynxtools_raman.rod_database.rod_batch
     :command: download_rod_files_cli
     :prog_name: pynx-raman download
     :depth: 2
@@ -20,7 +20,7 @@ Downloads a batch of `.rod` files from the Raman Open Database.
 Downloads, converts, and stamps a batch of Raman Open Database records with NOMAD upload metadata in one step — see [Learn > The Raman Open Database in NOMAD](../learn/rod_database_in_nomad.md).
 
 ::: mkdocs-click
-    :module: pynxtools_raman.rod.rod_batch
+    :module: pynxtools_raman.rod_database.rod_batch
     :command: build_rod_upload_batch
     :prog_name: pynx-raman build-upload-batch
     :depth: 2
@@ -31,7 +31,7 @@ Downloads, converts, and stamps a batch of Raman Open Database records with NOMA
 Counts how often each CIF key occurs across a directory of `.rod` files — useful when deciding what to add to [`config_file_rod.json`](rod.md).
 
 ::: mkdocs-click
-    :module: pynxtools_raman.rod.rod_stats
+    :module: pynxtools_raman.rod_database.rod_stats
     :command: analyze_rod_keys
     :prog_name: pynx-raman analyze-keys
     :depth: 2

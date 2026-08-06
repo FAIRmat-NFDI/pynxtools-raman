@@ -15,3 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""Shared default directory across all pynx-raman ROD sub-commands
+(download, build-upload-batch, analyze-keys), so they default to the same
+place instead of scattering files across the current directory."""
+
+from pathlib import Path
+
+DEFAULT_ROD_BATCH_DIR = Path("rod_batch")

@@ -73,7 +73,7 @@ where = [
 ]
 
 [tool.setuptools.package-data]
-pynxtools_raman = ["*.json", "rod/data/*.txt"]
+pynxtools_raman = ["*.json", "rod_database/data/*.txt"]
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"

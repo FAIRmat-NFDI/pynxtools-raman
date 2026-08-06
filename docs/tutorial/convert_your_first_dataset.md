@@ -25,7 +25,7 @@ examples/witec/txt/
 └── eln_data.yaml                   # metadata the raw export doesn't carry
 ```
 
-Open `Si-wafer-Raman-Spectrum-1.txt` and you'll see two sections: a `[Header]` block with instrument settings as `key = value` pairs, and a `[Data]` block with comma-separated wavelength/intensity pairs. The WITec sub-reader only reads the `[Data]` block for now — everything else about the measurement (instrument, sample, user, experiment description, ...) comes from `eln_data.yaml` instead. Open that file too: it's a plain YAML structure whose keys already mirror the NeXus concepts we're about to write, e.g. `instrument.beam_incident.wavelength.value`.
+Open `Si-wafer-Raman-Spectrum-1.txt` and you'll see two sections: a `[Header]` block with instrument settings as `key = value` pairs, and a `[Data]` block with comma-separated wavelength/intensity pairs. The WITec parser reads the `[Header]` block too (it's where the axis/intensity units come from), but most of what a `NXraman` entry needs — instrument, sample, user, experiment description, ... — comes from `eln_data.yaml`, since the WITec header doesn't carry it. Open that file too: it's a plain YAML structure whose keys already mirror the NeXus concepts we're about to write, e.g. `instrument.beam_incident.wavelength.value`.
 
 ## Steps
 

@@ -1,10 +1,34 @@
+#
+# Copyright The NOMAD Authors.
+#
+# This file is part of NOMAD. See https://nomad-lab.eu for further info.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+import copy
+import datetime
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 import gemmi  # for cif file handling
 
+from pynxtools_raman.parsers.base import _RamanParser
+
 logger = logging.getLogger("pynxtools")
+
+__all__ = ["RodParser", "build_citation_fields"]
 
 ROD_CITATION_DOI = "10.1107/S1600576719004229"
 ROD_CITATION_TEXT = (
@@ -18,17 +42,41 @@ ROD_LICENSE_TEXT = (
 )
 ROD_RECORD_URL_TEMPLATE = "https://solsa.crystallography.net/rod/{code}.html"
 
+# The two CIF keys that hold the actual measured spectrum, as opposed to
+# metadata about it - everything else extracted from the .rod file is a
+# scalar attribute of the measurement, not measurement data itself.
+ROD_SPECTRUM_DATA_KEYS = ("_raman_spectrum.intensity", "_raman_spectrum.raman_shift")
 
-class RodParser:
+
+class RodParser(_RamanParser):
     """
-    This class provides the utilities to read in a .rod file with "get_cif_file_content".
-    Then extract all data via "extract_keys_and_values_from_cif" into a dictionary.
+    Parses .rod files (CIF-formatted records from the Raman Open Database)
+    via "get_cif_file_content" / "extract_keys_and_values_from_cif", then
+    splits the result into scalar metadata (self.attrs) and the measured
+    spectrum arrays (self.data).
     """
+
+    supported_file_extensions = (".rod",)
+    config_file = "config_file_rod.json"
+    unused_attrs_group_name = "unused_rod_keys"
 
     def __init__(self, *args, **kwargs):
+        super().__init__()
         self.cif_doc = None
         self.cif_block = None
         self.lines = []
+
+    def matches_file(self, file: Path) -> bool:
+        """A .rod file is a CIF file, and every CIF file must declare a
+        single data block near the top via a `data_<name>` line."""
+        try:
+            with open(file, encoding="utf-8") as rod_file:
+                for _, line in zip(range(50), rod_file):
+                    if line.startswith("data_"):
+                        return True
+        except OSError:
+            return False
+        return False
 
     def _read_lines(self, file: str | Path):
         """
@@ -40,7 +88,7 @@ class RodParser:
         return lines
 
     def get_cif_file_content(self, file_path):
-        doc = gemmi.cif.read_file(file_path)
+        doc = gemmi.cif.read_file(str(file_path))
         block = doc.sole_block()  # extract main block of cif file
         self.cif_doc = doc
         self.cif_block = block
@@ -56,7 +104,7 @@ class RodParser:
                     line_positions_of_str_element.append(line_number)
         else:
             if rod_lines is None:
-                logger.info(f"Problem during reading .rod file. 'rod_line' is None.")
+                logger.info(f"Problem during reading .rod file. 'rod_lines' is None.")
             else:
                 for line_number, lines in enumerate(rod_lines):
                     if string_element in lines:
@@ -176,6 +224,137 @@ class RodParser:
 
         return cif_dict_key_value_pair_dict
 
+    def _parse(self, file: Path, **kwargs) -> None:
+        self.get_cif_file_content(file)
+        cif_fields = self.extract_keys_and_values_from_cif()
+
+        # the measured spectrum itself -> self.data; everything else -> self.attrs
+        self.data = {
+            key: cif_fields.pop(key)
+            for key in ROD_SPECTRUM_DATA_KEYS
+            if key in cif_fields
+        }
+        self.attrs = cif_fields
+
+        # replace the [ and ] to avoid conflicts in processing with pynxtools NXclass assignments
+        self.attrs = {
+            key.replace("_[local]_", "_local_"): value
+            for key, value in self.attrs.items()
+        }
+
+        self.unused_attrs = copy.deepcopy(self.attrs)
+
+        self.attrs.update(build_citation_fields(self.attrs))
+        for consumed_key in (
+            "_publ_author_name",
+            "_publ_section_title",
+            "_journal_name_full",
+            "_journal_volume",
+            "_journal_page_first",
+            "_journal_page_last",
+            "_journal_year",
+        ):
+            self.unused_attrs.pop(consumed_key, None)
+
+        if self.attrs.get("_cod_database_code") is not None or "":
+            self.attrs["COD_service_name"] = "Crystallography Open Database"
+            del self.unused_attrs["_cod_database_code"]
+
+        if self.attrs.get("_cell_length_a") is not None or "":
+            # transform 9.40(3) to 9.40
+            length_a = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_length_a"))
+            length_b = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_length_b"))
+            length_c = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_length_c"))
+            self.attrs["rod_unit_cell_length_abc"] = [
+                float(length_a),
+                float(length_b),
+                float(length_c),
+            ]
+            del self.unused_attrs["_cell_length_a"]
+            del self.unused_attrs["_cell_length_b"]
+            del self.unused_attrs["_cell_length_c"]
+        if self.attrs.get("_cell_angle_alpha") is not None or "":
+            # transform 9.40(3) to 9.40
+            angle_alpha = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_angle_alpha"))
+            angle_beta = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_angle_beta"))
+            angle_gamma = re.sub(r"\(\d+\)", "", self.attrs.get("_cell_angle_gamma"))
+            self.attrs["rod_unit_cell_angles_alphabetagamma"] = [
+                float(angle_alpha),
+                float(angle_beta),
+                float(angle_gamma),
+            ]
+            del self.unused_attrs["_cell_angle_alpha"]
+            del self.unused_attrs["_cell_angle_beta"]
+            del self.unused_attrs["_cell_angle_gamma"]
+
+        # This changes all uppercase string elements to lowercase string elements for the given key, within a given key value pair
+        key_to_make_value_lower_case = "_raman_measurement.environment"
+        environment_name_str = self.attrs.get(key_to_make_value_lower_case)
+        if environment_name_str is not None:
+            self.attrs[key_to_make_value_lower_case] = environment_name_str.lower()
+
+        # transform the string into a datetime object
+        time_key = "_raman_measurement.datetime_initiated"
+        date_time_str = self.attrs.get(time_key)
+        if date_time_str is not None:
+            date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
+            # assume UTC for .rod data, as this is not specified in detail
+            tzinfo = datetime.timezone.utc
+            if isinstance(date_time_obj, datetime.datetime):
+                if tzinfo is not None:
+                    # Apply the specified timezone to the datetime object
+                    date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
+
+                # assign the dictionary the corrected date format
+                self.attrs[time_key] = date_time_obj.isoformat()
+
+        # remove capitalization
+        objective_type_key = "_raman_measurement_device.optics_type"
+        objective_type_str = self.attrs.get(objective_type_key)
+        if objective_type_str is not None:
+            self.attrs[objective_type_key] = objective_type_str.lower()
+            # set a valid raman NXDL value, but only if it matches one of the correct ones:
+            objective_type_list = ["objective", "lens", "glass fiber", "none"]
+            if self.attrs.get(objective_type_key) not in objective_type_list:
+                self.attrs[objective_type_key] = "other"
+
+    def post_process(self, eln_data: dict[str, Any]) -> None:
+        wavelength_nm = float(
+            self.attrs.get("_raman_measurement_device.excitation_laser_wavelength")
+        )
+        resolution_inverse_cm = float(
+            self.attrs.get("_raman_measurement_device.resolution")
+        )
+
+        if wavelength_nm is not None and resolution_inverse_cm is not None:
+            # assume the resolution is referred to the resolution at the laser wavelength
+            wavelength_inverse_cm = 1e7 / wavelength_nm
+            resolution_nm = (
+                resolution_inverse_cm / wavelength_inverse_cm * wavelength_nm
+            )
+
+            # update the data dictionary
+            self.attrs[
+                "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/physical_quantity"
+            ] = "wavelength"
+            self.attrs[
+                "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution"
+            ] = resolution_nm
+            self.attrs[
+                "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution/@units"
+            ] = "nm"
+            # remove this key from original input data
+            del self.unused_attrs["_raman_measurement_device.resolution"]
+
+        diffraction_grating = self.attrs.get(
+            "_raman_measurement_device.diffraction_grating"
+        )
+
+        if diffraction_grating is not None:
+            self.attrs[
+                "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period"
+            ] = 1 / float(diffraction_grating)
+
 
 def _strip_cif_quotes(value: str) -> str:
     return value.strip().strip("'").strip('"')
@@ -201,7 +380,7 @@ def build_citation_fields(raman_data: dict) -> dict[str, Any]:
       outside NOMAD.
 
     Returns a dict of synthetic keys to be merged into the parsed .rod data and
-    referenced from config_file_rod.json via "@data:<key>".
+    referenced from config_file_rod.json via "@attrs:<key>".
     """
     citation_fields: dict[str, Any] = {}
 
@@ -243,39 +422,3 @@ def build_citation_fields(raman_data: dict) -> dict[str, Any]:
         )
 
     return citation_fields
-
-
-def post_process_rod(self) -> None:
-    wavelength_nm = float(
-        self.raman_data.get("_raman_measurement_device.excitation_laser_wavelength")
-    )
-    resolution_inverse_cm = float(
-        self.raman_data.get("_raman_measurement_device.resolution")
-    )
-
-    if wavelength_nm is not None and resolution_inverse_cm is not None:
-        # assume the resolution is referred to the resolution at the laser wavelength
-        wavelength_inverse_cm = 1e7 / wavelength_nm
-        resolution_nm = resolution_inverse_cm / wavelength_inverse_cm * wavelength_nm
-
-        # update the data dictionary
-        self.raman_data[
-            "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/physical_quantity"
-        ] = "wavelength"
-        self.raman_data[
-            "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution"
-        ] = resolution_nm
-        self.raman_data[
-            "/ENTRY[entry]/INSTRUMENT[instrument]/wavelength_resolution/resolution/@units"
-        ] = "nm"
-        # remove this key from original input data
-        del self.missing_meta_data["_raman_measurement_device.resolution"]
-
-    diffraction_grating = self.raman_data.get(
-        "_raman_measurement_device.diffraction_grating"
-    )
-
-    if diffraction_grating is not None:
-        self.raman_data[
-            "/ENTRY[entry]/INSTRUMENT[instrument]/MONOCHROMATOR[monochromator]/GRATING[grating]/period"
-        ] = 1 / float(diffraction_grating)

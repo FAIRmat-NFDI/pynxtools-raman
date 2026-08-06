@@ -8,12 +8,12 @@
 
 | Extension | Handler | What it does |
 | --------- | ------- | ------------- |
-| `.rod` | `handle_rod_file` | Parses a Raman Open Database record (see [The WITec and ROD readers](readers.md#the-rod-sub-reader)). |
-| `.txt` | `handle_txt_file` | Parses a WITec Alpha export (see [The WITec and ROD readers](readers.md#the-witec-sub-reader)). |
+| `.rod` | `handle_rod_file` | Parses a Raman Open Database record (see [The WITec and ROD parsers](readers.md#the-rod-parser)). |
+| `.txt` | `handle_txt_file` | Parses a WITec Alpha export (see [The WITec and ROD parsers](readers.md#the-witec-parser)). |
 | `.yaml` / `.yml` | `handle_eln_file` | Loads an ELN metadata file. |
 | `.json` | `set_config_file` | Registers the config file for this conversion. |
 
-You don't select a sub-reader explicitly — you just pass files with the right extensions to `pynx convert`, and `RamanReader` figures out what each one is for. `.rod` and `.txt` are mutually exclusive in practice: a `.rod` file already carries its own metadata and doesn't need an ELN file, while a `.txt` (WITec) conversion needs one to supply everything the raw export doesn't.
+You don't select a parser explicitly — you just pass files with the right extensions to `pynx convert`, and `RamanReader` figures out what each one is for. `.rod` and `.txt` are mutually exclusive in practice: a `.rod` file already carries its own metadata and doesn't need an ELN file, while a `.txt` (WITec) conversion needs one to supply everything the raw export doesn't.
 
 Both `.rod` and `.txt` handlers set a default config file for their format (`config_file_rod.json` or `config_file_witec.json`, both under `src/pynxtools_raman/config/`), so you don't have to pass one explicitly unless you want to override it.
 
@@ -41,24 +41,35 @@ A trailing `/@name` segment sets an attribute instead of a field — e.g. `.../w
 
 ### Config file values select where the data comes from
 
-A value has the form `@<PREFIX>:<PATH>`, where `<PREFIX>` is `eln`, `data`, or omitted entirely:
+A value has the form `@<PREFIX>:<PATH>`, where `<PREFIX>` is `eln`, `attrs`, `data`, or omitted entirely:
 
 - `@eln:<PATH>` calls `RamanReader.get_eln_data`, which looks `<PATH>` up in the parsed ELN file.
-- `@data:<PATH>` calls `RamanReader.get_data`, which looks `<PATH>` up in whatever the active sub-reader (WITec or ROD) parsed from the raw measurement file.
+- `@attrs:<PATH>` calls `RamanReader.get_attr`, which looks `<PATH>` up in the active parser's scalar metadata — instrument settings, sample information, computed values that aren't the spectrum itself. This is what most of `config_file_rod.json` uses, since almost everything a `.rod` file carries (unit cell dimensions, instrument fields, citations, ...) is metadata *about* the measurement, not the measurement itself.
+- `@data:<PATH>` calls `RamanReader.get_data`, which looks `<PATH>` up in the active parser's measurement data — the spectrum arrays themselves (intensity, Raman shift, WITec's x/y columns). Only a handful of keys in either config file use this: the actual `NXdata` fields.
 - A bare literal value (no `@` prefix at all), e.g. `"nm"` or `532`, is written as-is — no lookup happens.
 
-If `<PATH>` is omitted (just `"@eln"` or `"@data"`), the converter derives it automatically from the key: it strips the uppercase class names and the `[...]` brackets, so `/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength` becomes the path `entry/instrument/beam_incident/wavelength`. This works whenever your ELN file (or parsed data dict) already mirrors the NeXus structure — which is the common case, and why most keys in `config_file_witec.json` are just `"@eln"` with no explicit path.
+If `<PATH>` is omitted (just `"@eln"`, `"@attrs"`, or `"@data"`), the converter derives it automatically from the key: it strips the uppercase class names and the `[...]` brackets, so `/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength` becomes the path `entry/instrument/beam_incident/wavelength`. This works whenever your ELN file (or a parser's `attrs`/`data`) already mirrors the NeXus structure — which is the common case, and why most keys in `config_file_witec.json` are just `"@eln"` with no explicit path.
 
 ### Fallback lists
 
 A value can also be a JSON-encoded list of `@`-prefixed candidates, tried in order until one resolves to something non-empty:
 
 ```json
-"/ENTRY[entry]/SAMPLE[sample]/name": "['@data:_chemical_name_mineral','@data:_chemical_name_systematic']"
+"/ENTRY[entry]/SAMPLE[sample]/name": "['@attrs:_chemical_name_mineral','@attrs:_chemical_name_systematic']"
 ```
 
 `config_file_rod.json` uses this for fields that different Raman Open Database records populate differently — see [How-to > Adjust the config file](../how-tos/adjust_the_config_file.md#add-a-fallback-chain-for-a-field-that-comes-from-different-sources-depending-on-the-record).
 
+## Parser classes
+
+`.rod` and `.txt` files are each parsed by a small class — `RodParser` and `WitecParser` — that both subclass a shared internal base, `_RamanParser` (`src/pynxtools_raman/parsers/base.py`). Each parser implements:
+
+- `matches_file(file)` — a cheap structural check (not just an extension check) that a given file actually looks like this parser's format. `RamanReader` calls this before parsing, so a `.txt` file that isn't actually a WITec export gets skipped with a warning rather than mis-parsed.
+- `_parse(file)` — populates two dicts: `attrs` (scalar metadata, backing `@attrs:`) and `data` (measurement arrays, backing `@data:`).
+- `post_process(eln_data)` — derives fields that need context only available after all input files (including the ELN) have been read; see below.
+
+`RamanReader` doesn't know the details of either format. It just instantiates the parser matching the file extension, calls `.parse()`, and exposes the result through `get_attr`/`get_data`. Any `attrs` entry not referenced by the config file is written into a `COLLECTION[unused_rod_keys]` or `COLLECTION[unused_witec_keys]` catch-all group in the output, so nothing is silently dropped — see [Reference > Raman Open Database reader](../reference/rod.md) and [Reference > WITec Alpha reader](../reference/witec.md).
+
 ## Post-processing
 
-Both sub-readers can register a `post_process` hook — a function called after the raw data has been parsed, before the config file is applied — to compute values that don't exist as a single field in the source data. The WITec reader uses this to turn the measured wavelength axis and the laser wavelength into a Raman shift axis; the ROD reader uses it to convert a spectral resolution given in wavenumbers into a wavelength-domain resolution, and to convert a diffraction grating's groove density into a grating period. See [Learn > The WITec and ROD readers](readers.md) for the details of each.
+Both parsers can override `post_process(eln_data)`. This is called once, after every input file (including the ELN) has been parsed, before the config file is applied — to compute values that don't exist as a single field in the source data. `WitecParser` uses this to turn the measured wavelength axis and the laser wavelength (from the ELN) into a Raman shift axis; `RodParser` uses it to convert a spectral resolution given in wavenumbers into a wavelength-domain resolution, and to convert a diffraction grating's groove density into a grating period. See [Learn > The WITec and ROD readers](readers.md) for the details of each.

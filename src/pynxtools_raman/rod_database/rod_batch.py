@@ -19,7 +19,7 @@
 
 Both sub-commands here (``download``, ``build-upload-batch``) operate on the
 same kind of input -- a batch of ROD IDs, given directly, via --ids-file,
-and/or via --all -- so they share one option surface (rod_batch_options)
+and/or via --all -- so they share one option surface (_rod_batch_options)
 and one ID-resolution/confirmation path, rather than duplicating that
 across each command.
 """
@@ -31,11 +31,10 @@ from pathlib import Path
 import click
 from pynxtools.dataconverter.convert import convert
 
-from pynxtools_raman.rod.nomad_upload_metadata import write_nomad_json
-from pynxtools_raman.rod.rod_get_file import (
-    DEFAULT_ROD_BATCH_DIR,
-    save_rod_file_from_ROD_via_API,
-)
+from pynxtools_raman.parsers.rod import RodParser
+from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR
+from pynxtools_raman.rod_database.nomad_upload_metadata import write_nomad_json
+from pynxtools_raman.rod_database.rod_get_file import save_rod_file_from_ROD_via_API
 
 logger = logging.getLogger(__file__)
 
@@ -43,7 +42,7 @@ DATA_DIR = Path(__file__).parent / "data"
 ALL_KNOWN_ROD_IDS_FILE = DATA_DIR / "ROD-numbers.txt"
 
 
-def missing_rod_ids(rod_ids: list[int], output_dir: Path) -> list[int]:
+def _missing_rod_ids(rod_ids: list[int], output_dir: Path) -> list[int]:
     """Return the subset of rod_ids that don't already have a .rod file in
     output_dir -- the ones a download would actually have to fetch.
     """
@@ -98,6 +97,8 @@ def convert_rod_files(input_dir: Path, output_dir: Path | None = None) -> list[P
     for rod_file in sorted(input_dir.glob("*.rod")):
         output_file = output_dir / f"{rod_file.stem}.nxs"
         try:
+            if not RodParser.is_mainfile(rod_file):
+                raise ValueError(f"{rod_file} does not look like a ROD .rod file.")
             convert(
                 input_file=(str(rod_file),),
                 reader="raman",
@@ -143,7 +144,7 @@ def resolve_rod_ids(
     return rod_id_list
 
 
-def confirm_download(rod_id_list: list[int], output_dir: Path, yes: bool) -> bool:
+def _confirm_download(rod_id_list: list[int], output_dir: Path, yes: bool) -> bool:
     """Ask for confirmation before downloading whichever of rod_id_list
     aren't already present in output_dir, unless yes is set. Skips the
     prompt entirely (no network activity, nothing to confirm) if every ID
@@ -152,7 +153,7 @@ def confirm_download(rod_id_list: list[int], output_dir: Path, yes: bool) -> boo
     """
     if yes:
         return True
-    to_download = missing_rod_ids(rod_id_list, output_dir)
+    to_download = _missing_rod_ids(rod_id_list, output_dir)
     if not to_download:
         return True
     if click.confirm(
@@ -163,7 +164,7 @@ def confirm_download(rod_id_list: list[int], output_dir: Path, yes: bool) -> boo
     return False
 
 
-def rod_batch_options(command: Callable) -> Callable:
+def _rod_batch_options(command: Callable) -> Callable:
     """Shared CLI surface for commands operating on a batch of ROD IDs:
     positional IDs, --ids-file, --all, --output-dir, --yes.
     """
@@ -201,7 +202,7 @@ def rod_batch_options(command: Callable) -> Callable:
 
 
 @click.command("download-rod-files")
-@rod_batch_options
+@_rod_batch_options
 def download_rod_files_cli(
     rod_ids: tuple[str, ...],
     ids_file: Path | None,
@@ -215,7 +216,7 @@ def download_rod_files_cli(
     and/or --all.
     """
     rod_id_list = resolve_rod_ids(rod_ids, ids_file, all_known)
-    if not confirm_download(rod_id_list, output_dir, yes):
+    if not _confirm_download(rod_id_list, output_dir, yes):
         return
 
     downloaded = download_rod_files(rod_id_list, output_dir)
@@ -225,7 +226,7 @@ def download_rod_files_cli(
 
 
 @click.command("build-rod-upload-batch")
-@rod_batch_options
+@_rod_batch_options
 def build_rod_upload_batch(
     rod_ids: tuple[str, ...],
     ids_file: Path | None,
@@ -240,7 +241,7 @@ def build_rod_upload_batch(
     and/or --all.
     """
     rod_id_list = resolve_rod_ids(rod_ids, ids_file, all_known)
-    if not confirm_download(rod_id_list, output_dir, yes):
+    if not _confirm_download(rod_id_list, output_dir, yes):
         return
 
     downloaded = download_rod_files(rod_id_list, output_dir)

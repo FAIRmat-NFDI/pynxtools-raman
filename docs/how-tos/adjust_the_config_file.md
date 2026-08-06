@@ -4,7 +4,7 @@ This how-to assumes you already understand what the config file does and how its
 
 ## Provide your own metadata via an ELN file
 
-The WITec reader only extracts the Raman shift and intensity arrays from the raw `.txt` export; everything else — instrument, sample, user, experiment description — comes from a separate `eln_data.yaml` file that you write. Its structure should mirror the NeXus concept paths (lowercased, without the `TYPE[...]` bracket syntax); see the [example ELN file](https://github.com/FAIRmat-NFDI/pynxtools-raman/blob/main/examples/witec/txt/eln_data.yaml) that ships with the repository, or generate a fresh template with
+The WITec parser only extracts the spectrum arrays and a handful of scalar fields (axis/intensity units, sample stage position, ...) from the raw `.txt` export; everything else — instrument, sample, user, experiment description — comes from a separate `eln_data.yaml` file that you write. Its structure should mirror the NeXus concept paths (lowercased, without the `TYPE[...]` bracket syntax); see the [example ELN file](https://github.com/FAIRmat-NFDI/pynxtools-raman/blob/main/examples/witec/txt/eln_data.yaml) that ships with the repository, or generate a fresh template with
 
 ```shell
 pynx generate-eln NXraman --eln-type reader
@@ -26,7 +26,7 @@ No key found during eln_data processing for key '...' after it's modification to
 
 ## Give a field a fixed, hardcoded value
 
-Skip the `@eln`/`@data` prefix and just write the literal value:
+Skip the `@eln`/`@attrs`/`@data` prefix and just write the literal value:
 
 ```json
 "/ENTRY[entry]/INSTRUMENT[instrument]/beam_incident/wavelength": 532
@@ -69,15 +69,15 @@ By default, entries are named `entry` (from `ENTRY[entry]` throughout the config
 Some ROD records have a mineral name, others only a systematic chemical name; some have `_cod_original_formula_sum`, others only `_chemical_formula_structural`. Rather than picking one source and losing the other, `config_file_rod.json` uses a JSON-encoded list of candidates, tried in order until one resolves:
 
 ```json
-"/ENTRY[entry]/SAMPLE[sample]/name": "['@data:_chemical_name_mineral','@data:_chemical_name_systematic']"
+"/ENTRY[entry]/SAMPLE[sample]/name": "['@attrs:_chemical_name_mineral','@attrs:_chemical_name_systematic']"
 ```
 
-The same pattern works for `@eln` sources. This is the mechanism to reach for whenever "the right field to use" depends on what a specific input file actually contains.
+The same pattern works for `@eln`/`@data` sources too. This is the mechanism to reach for whenever "the right field to use" depends on what a specific input file actually contains.
 
-## Point a reader at a different config file
+## Point a parser at a different config file
 
-The `.rod` and `.witec` readers each hardcode their own default config file (see [Learn > The WITec and ROD readers](../learn/readers.md)). If you're experimenting with a modified config file, pass it explicitly on the command line — it's detected by its `.json` extension and takes precedence over the default:
+`RodParser` and `WitecParser` each hardcode their own default config file (see [Learn > The WITec and ROD parsers](../learn/readers.md)). If you're experimenting with a modified config file, pass it explicitly on the command line using the `-c` flag. It takes precedence over the default:
 
 ```shell
-pynx convert examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt my_custom_config.json --reader raman --nxdl NXraman --output test.nxs
+pynx convert examples/witec/txt/eln_data.yaml examples/witec/txt/Si-wafer-Raman-Spectrum-1.txt -c my_custom_config.json --reader raman --nxdl NXraman --output test.nxs
 ```

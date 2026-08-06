@@ -15,13 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Bulk download and NOMAD-upload-batch pipeline for ROD records.
+"""Bulk download, NOMAD-upload-batch, and upload pipeline for ROD records.
 
-Both sub-commands here (``download``, ``build-upload-batch``) operate on the
-same kind of input -- a batch of ROD IDs, given directly, via --ids-file,
-and/or via --all -- so they share one option surface (_rod_batch_options)
-and one ID-resolution/confirmation path, rather than duplicating that
-across each command.
+``download`` and ``build-upload-batch`` operate on the same kind of input
+-- a batch of ROD IDs, given directly, via --ids-file, and/or via --all --
+so they share one option surface (_rod_batch_options) and one
+ID-resolution/confirmation path, rather than duplicating that across each
+command. ``upload`` operates on an already-built batch directory instead,
+so it has its own options.
 """
 
 import logging
@@ -35,6 +36,12 @@ from pynxtools_raman.parsers.rod import RodParser
 from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR
 from pynxtools_raman.rod_database.nomad_upload_metadata import write_nomad_json
 from pynxtools_raman.rod_database.rod_get_file import save_rod_file_from_ROD_via_API
+from pynxtools_raman.rod_database.rod_upload import (
+    publish_batch_upload,
+    upload_batch,
+    wait_for_processing,
+    zip_upload_batch,
+)
 
 logger = logging.getLogger(__file__)
 
@@ -235,7 +242,7 @@ def build_rod_upload_batch(
     yes: bool,
 ):
     """Download, convert, and add nomad.json upload metadata for a batch of
-    ROD records -- the full pipeline for one NOMAD upload, ready to zip.
+    ROD records -- the full pipeline for one NOMAD upload.
 
     ROD_IDS: ROD IDs to include, in addition to any given via --ids-file
     and/or --all.
@@ -254,5 +261,81 @@ def build_rod_upload_batch(
 
     metadata_path = write_nomad_json(output_dir)
     click.echo(
-        f"Wrote {metadata_path}. Batch ready in {output_dir} -- zip it for upload."
+        f"Wrote {metadata_path}. Batch ready in {output_dir} -- "
+        "run 'pynx-raman upload' to send it to NOMAD."
     )
+
+
+@click.command("upload-rod-batch")
+@click.option(
+    "--output-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=DEFAULT_ROD_BATCH_DIR,
+    show_default=True,
+    help="Directory containing the batch to upload, as built by build-upload-batch.",
+)
+@click.option(
+    "--upload-name",
+    default=None,
+    help="Name to give the NOMAD upload.",
+)
+@click.option(
+    "--nomad-url",
+    default=None,
+    help="NOMAD API URL. Defaults to the central NOMAD deployment.",
+)
+@click.option(
+    "--publish",
+    is_flag=True,
+    help=(
+        "Publish the upload after successful processing. Off by default: "
+        "the upload lands in staging for manual review."
+    ),
+)
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Do not ask for confirmation before publishing.",
+)
+def upload_rod_batch(
+    output_dir: Path,
+    upload_name: str | None,
+    nomad_url: str | None,
+    publish: bool,
+    yes: bool,
+):
+    """Zip, upload, and optionally publish a ROD batch to NOMAD.
+
+    Requires NOMAD_USERNAME and NOMAD_PASSWORD to be set in the
+    environment.
+    """
+    zip_path = zip_upload_batch(output_dir)
+    click.echo(f"Zipped {output_dir} to {zip_path}.")
+
+    upload_id = upload_batch(zip_path, url=nomad_url, upload_name=upload_name)
+    click.echo(f"Created upload {upload_id}. Waiting for processing...")
+
+    upload = wait_for_processing(upload_id, url=nomad_url)
+    click.echo(
+        f"Processing finished: {upload.process_status}, {upload.entries} entries."
+    )
+    for error in upload.errors:
+        click.echo(f"  error: {error}")
+
+    if not publish:
+        click.echo(f"Upload {upload_id} is in staging; review it in NOMAD.")
+        return
+
+    if upload.process_status == "FAILURE":
+        click.echo("Not publishing: processing failed.")
+        return
+
+    if not yes and not click.confirm(
+        f"Publish upload {upload_id}? This makes it public."
+    ):
+        click.echo("Not published.")
+        return
+
+    publish_batch_upload(upload_id, url=nomad_url)
+    click.echo(f"Published upload {upload_id}.")

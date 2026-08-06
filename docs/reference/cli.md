@@ -26,6 +26,17 @@ Downloads, converts, and stamps a batch of Raman Open Database records with NOMA
     :depth: 2
     :style: table
 
+## Upload a ROD batch to NOMAD
+
+Zips a batch built by `build-upload-batch`, uploads it to NOMAD, waits for processing, and optionally publishes it. Requires the `pynxtools-raman[upload]` extra and `NOMAD_USERNAME`/`NOMAD_PASSWORD` set in the environment — see [Learn > The Raman Open Database in NOMAD](../learn/rod_database_in_nomad.md).
+
+::: mkdocs-click
+    :module: pynxtools_raman.rod_database.rod_batch
+    :command: upload_rod_batch
+    :prog_name: pynx-raman upload
+    :depth: 2
+    :style: table
+
 ## Analyze CIF keys in ROD files
 
 Counts how often each CIF key occurs across a directory of `.rod` files — useful when deciding what to add to [`config_file_rod.json`](rod.md).

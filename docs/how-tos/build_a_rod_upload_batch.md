@@ -1,6 +1,6 @@
 # Build a NOMAD upload batch from the Raman Open Database
 
-This how-to covers `pynx-raman`, the command-line tool for downloading `.rod` files from the [Raman Open Database (ROD)](https://solsa.crystallography.net/rod/){:target="_blank" rel="noopener"}, converting them to NeXus, and packaging the result for a NOMAD upload. See [Reference > Command line interface](../reference/cli.md) for the full option list, and [Learn > The Raman Open Database in NOMAD](../learn/rod_database_in_nomad.md) for why this exists.
+This how-to covers `pynx-raman`, the command-line tool for downloading `.rod` files from the [Raman Open Database (ROD)](https://solsa.crystallography.net/rod/){:target="_blank" rel="noopener"}, converting them to NeXus, packaging the result, and uploading it to NOMAD. See [Reference > Command line interface](../reference/cli.md) for the full option list, and [Learn > The Raman Open Database in NOMAD](../learn/rod_database_in_nomad.md) for why this exists.
 
 ## Download a batch of `.rod` files
 
@@ -40,7 +40,20 @@ Pass `-y`/`--yes` to skip the confirmation prompt — useful when scripting a la
 pynx-raman build-upload-batch --all --output-dir rod_batch
 ```
 
-`rod_batch/` is then ready to zip and upload to NOMAD as-is.
+`rod_batch/` is then ready for `pynx-raman upload` (below).
+
+## Upload the batch to NOMAD
+
+```shell
+pynx-raman upload --output-dir rod_batch
+```
+
+Zips `--output-dir`'s contents, uploads the archive to NOMAD, and waits for processing to finish, printing the entry count and any errors. This requires:
+
+- the `pynxtools-raman[upload]` extra installed (`pip install pynxtools-raman[upload]`), which pulls in [`nomad-utility-workflows`](https://pypi.org/project/nomad-utility-workflows/){:target="_blank" rel="noopener"},
+- `NOMAD_USERNAME` and `NOMAD_PASSWORD` set in the environment.
+
+By default the upload stays unpublished, sitting in staging where you can review it in the NOMAD web UI. Pass `--publish` to publish it automatically once processing succeeds — this asks for confirmation unless you also pass `-y`/`--yes`, since publishing is not reversible. Use `--upload-name` to give the upload a name, and `--nomad-url` to target a deployment other than the central NOMAD (e.g. an Oasis used for piloting a batch before it goes to the central deployment).
 
 ## What `nomad.json` is for
 

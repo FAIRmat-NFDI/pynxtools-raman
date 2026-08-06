@@ -20,6 +20,7 @@
 import json
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from click.testing import CliRunner
@@ -28,6 +29,7 @@ from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR, rod_batch
 from pynxtools_raman.rod_database.rod_batch import (
     build_rod_upload_batch,
     download_rod_files_cli,
+    upload_rod_batch,
 )
 
 ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
@@ -380,3 +382,98 @@ class TestBuildRodUploadBatchCli:
 
         assert result.exit_code == 0, result.output
         assert calls == [1000679]  # requested once, not twice
+
+
+class TestUploadRodBatchCli:
+    """CLI-level test of the upload command, with zip_upload_batch/
+    upload_batch/wait_for_processing/publish_batch_upload all faked -
+    tests/test_rod_upload.py covers their real behavior.
+    """
+
+    def _patch_pipeline(self, monkeypatch, upload, output_dir=None):
+        monkeypatch.setattr(
+            rod_batch,
+            "zip_upload_batch",
+            lambda directory: directory.with_suffix(".zip"),
+        )
+        monkeypatch.setattr(
+            rod_batch, "upload_batch", lambda zip_path, url, upload_name: "upload123"
+        )
+        monkeypatch.setattr(
+            rod_batch, "wait_for_processing", lambda upload_id, url: upload
+        )
+        monkeypatch.setattr(
+            rod_batch, "publish_batch_upload", lambda upload_id, url: None
+        )
+
+    def _success_upload(self, entries=2):
+        return SimpleNamespace(process_status="SUCCESS", entries=entries, errors=[])
+
+    def test_without_publish_stays_in_staging(self, runner, tmp_path, monkeypatch):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+
+        result = runner.invoke(upload_rod_batch, ["--output-dir", str(tmp_path)])
+
+        assert result.exit_code == 0, result.output
+        assert "is in staging" in result.output
+
+    def test_publish_with_yes_publishes(self, runner, tmp_path, monkeypatch):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish", "--yes"]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == ["upload123"]
+
+    def test_publish_without_yes_asks_and_declining_cancels(
+        self, runner, tmp_path, monkeypatch
+    ):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish"], input="n\n"
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == []
+        assert "Not published" in result.output
+
+    def test_failed_processing_is_not_published_even_with_publish_and_yes(
+        self, runner, tmp_path, monkeypatch
+    ):
+        tmp_path.mkdir(exist_ok=True)
+        failed_upload = SimpleNamespace(
+            process_status="FAILURE", entries=0, errors=["something broke"]
+        )
+        self._patch_pipeline(monkeypatch, failed_upload)
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish", "--yes"]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == []
+        assert "something broke" in result.output

@@ -30,7 +30,7 @@ This:
 2. converts every `.rod` file in that directory to a same-named `.nxs` file, using the `raman` reader and `NXraman` (failures are logged and skipped, not raised — one bad record doesn't stop the batch),
 3. writes `nomad.json` into the same directory (see below).
 
-Pass `-y`/`--yes` to skip the confirmation prompt — useful when scripting a large batch.
+You're asked for confirmation before downloading (if any files are missing) and again before converting (if doing so would overwrite `.nxs` files from a previous run) — re-running the command on a directory you've already built into is safe, but not silent. Pass `-y`/`--yes` to skip both confirmation prompts — useful when scripting a large batch.
 
 ## Downloading all known ROD records
 

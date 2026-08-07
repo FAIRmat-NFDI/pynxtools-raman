@@ -94,11 +94,11 @@ def test_upload_batch_uploads_and_returns_upload_id(tmp_path, monkeypatch):
     assert fake.metadata_calls == []
 
 
-def test_upload_batch_sets_upload_name_if_given(tmp_path, monkeypatch):
+def test_set_upload_name_calls_edit_upload_metadata(monkeypatch):
     fake = FakeUploads()
     monkeypatch.setattr(rod_upload, "_import_nomad_utility_workflows", lambda: fake)
 
-    rod_upload.upload_batch(tmp_path / "batch.zip", upload_name="ROD pilot batch")
+    rod_upload.set_upload_name("upload123", "ROD pilot batch")
 
     assert fake.metadata_calls == [
         ("upload123", {"upload_name": "ROD pilot batch"}, None)

@@ -38,6 +38,7 @@ from pynxtools_raman.rod_database.nomad_upload_metadata import write_nomad_json
 from pynxtools_raman.rod_database.rod_get_file import save_rod_file_from_ROD_via_API
 from pynxtools_raman.rod_database.rod_upload import (
     publish_batch_upload,
+    set_upload_name,
     upload_batch,
     wait_for_processing,
     zip_upload_batch,
@@ -171,6 +172,36 @@ def _confirm_download(rod_id_list: list[int], output_dir: Path, yes: bool) -> bo
     return False
 
 
+def _existing_nxs_files(input_dir: Path) -> list[Path]:
+    """Return the .nxs files in input_dir that a convert run would
+    overwrite -- i.e. the ones whose corresponding .rod file is also
+    present in input_dir.
+    """
+    return [
+        nxs_file
+        for rod_file in input_dir.glob("*.rod")
+        if (nxs_file := input_dir / f"{rod_file.stem}.nxs").is_file()
+    ]
+
+
+def _confirm_convert(input_dir: Path, yes: bool) -> bool:
+    """Ask for confirmation before converting if doing so would overwrite
+    existing .nxs files, unless yes is set. Returns whether the caller
+    should proceed.
+    """
+    if yes:
+        return True
+    existing = _existing_nxs_files(input_dir)
+    if not existing:
+        return True
+    if click.confirm(
+        f"About to overwrite {len(existing)} existing .nxs file(s) in {input_dir}. Proceed?"
+    ):
+        return True
+    click.echo("Cancelled.")
+    return False
+
+
 def _rod_batch_options(command: Callable) -> Callable:
     """Shared CLI surface for commands operating on a batch of ROD IDs:
     positional IDs, --ids-file, --all, --output-dir, --yes.
@@ -203,7 +234,10 @@ def _rod_batch_options(command: Callable) -> Callable:
         "--yes",
         "-y",
         is_flag=True,
-        help="Do not ask for confirmation before downloading.",
+        help=(
+            "Do not ask for confirmation before downloading or before "
+            "overwriting existing .nxs files during conversion."
+        ),
     )(command)
     return command
 
@@ -255,6 +289,9 @@ def build_rod_upload_batch(
     click.echo(
         f"{len(downloaded)}/{len(rod_id_list)} .rod file(s) present in {output_dir}."
     )
+
+    if not _confirm_convert(output_dir, yes):
+        return
 
     converted = convert_rod_files(output_dir)
     click.echo(f"Converted {len(converted)} .rod file(s) to NeXus.")
@@ -313,7 +350,7 @@ def upload_rod_batch(
     zip_path = zip_upload_batch(output_dir)
     click.echo(f"Zipped {output_dir} to {zip_path}.")
 
-    upload_id = upload_batch(zip_path, url=nomad_url, upload_name=upload_name)
+    upload_id = upload_batch(zip_path, url=nomad_url)
     click.echo(f"Created upload {upload_id}. Waiting for processing...")
 
     upload = wait_for_processing(upload_id, url=nomad_url)
@@ -322,6 +359,10 @@ def upload_rod_batch(
     )
     for error in upload.errors:
         click.echo(f"  error: {error}")
+
+    if upload_name:
+        set_upload_name(upload_id, upload_name, url=nomad_url)
+        click.echo(f"Set upload name to {upload_name!r}.")
 
     if not publish:
         click.echo(f"Upload {upload_id} is in staging; review it in NOMAD.")

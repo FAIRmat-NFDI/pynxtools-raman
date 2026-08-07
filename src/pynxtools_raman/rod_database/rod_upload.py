@@ -65,16 +65,13 @@ def _import_nomad_utility_workflows():
         ) from exc
 
 
-def upload_batch(
-    zip_path: Path, url: str | None = None, upload_name: str | None = None
-) -> str:
-    """Upload zip_path to NOMAD and set upload_name if given.
+def upload_batch(zip_path: Path, url: str | None = None) -> str:
+    """Upload zip_path to NOMAD.
 
     Args:
         zip_path (Path): Path of the zip file to upload.
         url (str, optional): NOMAD API URL. Defaults to the central NOMAD
             deployment (nomad-utility-workflows' own default).
-        upload_name (str, optional): Name to give the upload.
 
     Returns:
         str: The new upload's ID.
@@ -87,12 +84,26 @@ def upload_batch(
     upload_id = uploads.upload_files_to_nomad(str(zip_path), url=url)
     logger.info(f"Created upload {upload_id} from {zip_path}.")
 
-    if upload_name:
-        uploads.edit_upload_metadata(
-            upload_id, upload_metadata={"upload_name": upload_name}, url=url
-        )
-
     return upload_id
+
+
+def set_upload_name(upload_id: str, upload_name: str, url: str | None = None) -> None:
+    """Set upload_id's name.
+
+    NOMAD rejects a metadata edit while an upload is still processing (a
+    server-side race, not something this function can work around), so
+    call this after wait_for_processing(), not right after upload_batch().
+
+    Args:
+        upload_id (str): The upload to rename.
+        upload_name (str): Name to give the upload.
+        url (str, optional): NOMAD API URL.
+    """
+    uploads = _import_nomad_utility_workflows()
+    uploads.edit_upload_metadata(
+        upload_id, upload_metadata={"upload_name": upload_name}, url=url
+    )
+    logger.info(f"Set upload {upload_id}'s name to {upload_name!r}.")
 
 
 def wait_for_processing(

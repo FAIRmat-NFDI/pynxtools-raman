@@ -20,6 +20,7 @@
 import json
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from click.testing import CliRunner
@@ -28,6 +29,7 @@ from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR, rod_batch
 from pynxtools_raman.rod_database.rod_batch import (
     build_rod_upload_batch,
     download_rod_files_cli,
+    upload_rod_batch,
 )
 
 ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
@@ -324,6 +326,83 @@ class TestBuildRodUploadBatchCli:
         metadata = json.loads((tmp_path / "nomad.json").read_text(encoding="utf-8"))
         assert "Raman Open Database" in metadata["comment"]
 
+    def test_declining_convert_confirmation_cancels_before_writing_metadata(
+        self, runner, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            rod_batch, "save_rod_file_from_ROD_via_API", self._fake_save
+        )
+        # .rod already present -> no download prompt; stale .nxs present ->
+        # convert should ask before overwriting it.
+        shutil.copy(ROD_FIXTURE, tmp_path / "1000679.rod")
+        (tmp_path / "1000679.nxs").write_text("stale content", encoding="utf-8")
+
+        result = runner.invoke(
+            build_rod_upload_batch,
+            ["1000679", "--output-dir", str(tmp_path)],
+            input="n\n",
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Cancelled" in result.output
+        assert (tmp_path / "1000679.nxs").read_text(encoding="utf-8") == (
+            "stale content"
+        )
+        assert not (tmp_path / "nomad.json").exists()
+
+    def test_accepting_convert_confirmation_overwrites_existing_nxs(
+        self, runner, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            rod_batch, "save_rod_file_from_ROD_via_API", self._fake_save
+        )
+        shutil.copy(ROD_FIXTURE, tmp_path / "1000679.rod")
+        (tmp_path / "1000679.nxs").write_text("stale content", encoding="utf-8")
+
+        result = runner.invoke(
+            build_rod_upload_batch,
+            ["1000679", "--output-dir", str(tmp_path)],
+            input="y\n",
+        )
+
+        assert result.exit_code == 0, result.output
+        assert (tmp_path / "1000679.nxs").read_bytes() != b"stale content"
+        assert (tmp_path / "nomad.json").exists()
+
+    def test_yes_flag_skips_convert_confirmation_too(
+        self, runner, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            rod_batch, "save_rod_file_from_ROD_via_API", self._fake_save
+        )
+        shutil.copy(ROD_FIXTURE, tmp_path / "1000679.rod")
+        (tmp_path / "1000679.nxs").write_text("stale content", encoding="utf-8")
+
+        result = runner.invoke(
+            build_rod_upload_batch,
+            ["1000679", "--output-dir", str(tmp_path), "--yes"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert (tmp_path / "1000679.nxs").read_bytes() != b"stale content"
+
+    def test_no_convert_prompt_when_no_existing_nxs_files(
+        self, runner, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(
+            rod_batch, "save_rod_file_from_ROD_via_API", self._fake_save
+        )
+        shutil.copy(ROD_FIXTURE, tmp_path / "1000679.rod")
+
+        # No pre-existing .nxs and no --yes: must not block on a prompt.
+        result = runner.invoke(
+            build_rod_upload_batch,
+            ["1000679", "--output-dir", str(tmp_path)],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert (tmp_path / "1000679.nxs").is_file()
+
     def test_ids_file_is_combined_with_positional_ids(
         self, runner, tmp_path, monkeypatch
     ):
@@ -380,3 +459,133 @@ class TestBuildRodUploadBatchCli:
 
         assert result.exit_code == 0, result.output
         assert calls == [1000679]  # requested once, not twice
+
+
+class TestUploadRodBatchCli:
+    """CLI-level test of the upload command, with zip_upload_batch/
+    upload_batch/wait_for_processing/set_upload_name/publish_batch_upload
+    all faked - tests/test_rod_upload.py covers their real behavior.
+    """
+
+    def _patch_pipeline(self, monkeypatch, upload, output_dir=None):
+        monkeypatch.setattr(
+            rod_batch,
+            "zip_upload_batch",
+            lambda directory: directory.with_suffix(".zip"),
+        )
+        monkeypatch.setattr(
+            rod_batch, "upload_batch", lambda zip_path, url: "upload123"
+        )
+        monkeypatch.setattr(
+            rod_batch, "wait_for_processing", lambda upload_id, url: upload
+        )
+        monkeypatch.setattr(
+            rod_batch, "set_upload_name", lambda upload_id, upload_name, url: None
+        )
+        monkeypatch.setattr(
+            rod_batch, "publish_batch_upload", lambda upload_id, url: None
+        )
+
+    def _success_upload(self, entries=2):
+        return SimpleNamespace(process_status="SUCCESS", entries=entries, errors=[])
+
+    def test_without_publish_stays_in_staging(self, runner, tmp_path, monkeypatch):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+
+        result = runner.invoke(upload_rod_batch, ["--output-dir", str(tmp_path)])
+
+        assert result.exit_code == 0, result.output
+        assert "is in staging" in result.output
+
+    def test_upload_name_is_set_after_processing_not_before(
+        self, runner, tmp_path, monkeypatch
+    ):
+        # NOMAD rejects a metadata edit while an upload is still processing
+        # (see rod_upload.set_upload_name's docstring) -- assert the CLI
+        # calls wait_for_processing before set_upload_name, not the other
+        # way around.
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        call_order = []
+        monkeypatch.setattr(
+            rod_batch,
+            "wait_for_processing",
+            lambda upload_id, url: (
+                call_order.append("wait_for_processing"),
+                self._success_upload(),
+            )[1],
+        )
+        monkeypatch.setattr(
+            rod_batch,
+            "set_upload_name",
+            lambda upload_id, upload_name, url: call_order.append("set_upload_name"),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch,
+            ["--output-dir", str(tmp_path), "--upload-name", "ROD pilot batch"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert call_order == ["wait_for_processing", "set_upload_name"]
+
+    def test_publish_with_yes_publishes(self, runner, tmp_path, monkeypatch):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish", "--yes"]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == ["upload123"]
+
+    def test_publish_without_yes_asks_and_declining_cancels(
+        self, runner, tmp_path, monkeypatch
+    ):
+        tmp_path.mkdir(exist_ok=True)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish"], input="n\n"
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == []
+        assert "Not published" in result.output
+
+    def test_failed_processing_is_not_published_even_with_publish_and_yes(
+        self, runner, tmp_path, monkeypatch
+    ):
+        tmp_path.mkdir(exist_ok=True)
+        failed_upload = SimpleNamespace(
+            process_status="FAILURE", entries=0, errors=["something broke"]
+        )
+        self._patch_pipeline(monkeypatch, failed_upload)
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--publish", "--yes"]
+        )
+
+        assert result.exit_code == 0, result.output
+        assert published == []
+        assert "something broke" in result.output

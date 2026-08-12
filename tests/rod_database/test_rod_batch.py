@@ -35,6 +35,16 @@ from pynxtools_raman.rod_database.rod_batch import (
 ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
 
 
+def _write_nxs_files(directory: Path, count: int) -> list[Path]:
+    directory.mkdir(parents=True, exist_ok=True)
+    paths = []
+    for i in range(count):
+        path = directory / f"file{i}.nxs"
+        path.write_bytes(b"fake nxs content")
+        paths.append(path)
+    return paths
+
+
 @pytest.fixture()
 def runner():
     return CliRunner()
@@ -471,7 +481,7 @@ class TestUploadRodBatchCli:
         monkeypatch.setattr(
             rod_batch,
             "zip_upload_batch",
-            lambda directory: directory.with_suffix(".zip"),
+            lambda directory, zip_path=None: zip_path or directory.with_suffix(".zip"),
         )
         monkeypatch.setattr(
             rod_batch, "upload_batch", lambda zip_path, url: "upload123"
@@ -490,7 +500,7 @@ class TestUploadRodBatchCli:
         return SimpleNamespace(process_status="SUCCESS", entries=entries, errors=[])
 
     def test_without_publish_stays_in_staging(self, runner, tmp_path, monkeypatch):
-        tmp_path.mkdir(exist_ok=True)
+        _write_nxs_files(tmp_path, 1)
         self._patch_pipeline(monkeypatch, self._success_upload())
 
         result = runner.invoke(upload_rod_batch, ["--output-dir", str(tmp_path)])
@@ -505,7 +515,7 @@ class TestUploadRodBatchCli:
         # (see rod_upload.set_upload_name's docstring) -- assert the CLI
         # calls wait_for_processing before set_upload_name, not the other
         # way around.
-        tmp_path.mkdir(exist_ok=True)
+        _write_nxs_files(tmp_path, 1)
         self._patch_pipeline(monkeypatch, self._success_upload())
         call_order = []
         monkeypatch.setattr(
@@ -531,7 +541,7 @@ class TestUploadRodBatchCli:
         assert call_order == ["wait_for_processing", "set_upload_name"]
 
     def test_publish_with_yes_publishes(self, runner, tmp_path, monkeypatch):
-        tmp_path.mkdir(exist_ok=True)
+        _write_nxs_files(tmp_path, 1)
         self._patch_pipeline(monkeypatch, self._success_upload())
         published = []
         monkeypatch.setattr(
@@ -550,7 +560,7 @@ class TestUploadRodBatchCli:
     def test_publish_without_yes_asks_and_declining_cancels(
         self, runner, tmp_path, monkeypatch
     ):
-        tmp_path.mkdir(exist_ok=True)
+        _write_nxs_files(tmp_path, 1)
         self._patch_pipeline(monkeypatch, self._success_upload())
         published = []
         monkeypatch.setattr(
@@ -570,7 +580,7 @@ class TestUploadRodBatchCli:
     def test_failed_processing_is_not_published_even_with_publish_and_yes(
         self, runner, tmp_path, monkeypatch
     ):
-        tmp_path.mkdir(exist_ok=True)
+        _write_nxs_files(tmp_path, 1)
         failed_upload = SimpleNamespace(
             process_status="FAILURE", entries=0, errors=["something broke"]
         )
@@ -589,3 +599,98 @@ class TestUploadRodBatchCli:
         assert result.exit_code == 0, result.output
         assert published == []
         assert "something broke" in result.output
+
+    def test_no_nxs_files_errors(self, runner, tmp_path):
+        result = runner.invoke(upload_rod_batch, ["--output-dir", str(tmp_path)])
+
+        assert result.exit_code != 0
+        assert "No .nxs files found" in result.output
+
+    def test_batch_size_without_nomad_json_errors(self, runner, tmp_path, monkeypatch):
+        _write_nxs_files(tmp_path, 2)
+        self._patch_pipeline(monkeypatch, self._success_upload())
+
+        result = runner.invoke(
+            upload_rod_batch, ["--output-dir", str(tmp_path), "--batch-size", "1"]
+        )
+
+        assert result.exit_code != 0
+        assert "nomad.json" in result.output
+
+    def test_batch_size_splits_into_multiple_uploads(
+        self, runner, tmp_path, monkeypatch
+    ):
+        _write_nxs_files(tmp_path, 5)
+        (tmp_path / "nomad.json").write_text("{}", encoding="utf-8")
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        upload_calls = []
+        monkeypatch.setattr(
+            rod_batch,
+            "upload_batch",
+            lambda zip_path, url: (
+                upload_calls.append(zip_path) or f"upload{len(upload_calls)}"
+            ),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch,
+            ["--output-dir", str(tmp_path), "--batch-size", "2"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert len(upload_calls) == 3  # 5 files, batch-size 2 -> 2, 2, 1
+        assert "[1/3]" in result.output
+        assert "[2/3]" in result.output
+        assert "[3/3]" in result.output
+
+    def test_upload_name_is_suffixed_per_batch(self, runner, tmp_path, monkeypatch):
+        _write_nxs_files(tmp_path, 4)
+        (tmp_path / "nomad.json").write_text("{}", encoding="utf-8")
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        names = []
+        monkeypatch.setattr(
+            rod_batch,
+            "set_upload_name",
+            lambda upload_id, upload_name, url: names.append(upload_name),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch,
+            [
+                "--output-dir",
+                str(tmp_path),
+                "--batch-size",
+                "2",
+                "--upload-name",
+                "ROD pilot batch",
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert names == [
+            "ROD pilot batch (batch 1/2)",
+            "ROD pilot batch (batch 2/2)",
+        ]
+
+    def test_publish_confirmation_is_asked_once_for_multiple_batches(
+        self, runner, tmp_path, monkeypatch
+    ):
+        _write_nxs_files(tmp_path, 4)
+        (tmp_path / "nomad.json").write_text("{}", encoding="utf-8")
+        self._patch_pipeline(monkeypatch, self._success_upload())
+        published = []
+        monkeypatch.setattr(
+            rod_batch,
+            "publish_batch_upload",
+            lambda upload_id, url: published.append(upload_id),
+        )
+
+        result = runner.invoke(
+            upload_rod_batch,
+            ["--output-dir", str(tmp_path), "--batch-size", "2", "--publish"],
+            input="y\n",
+        )
+
+        assert result.exit_code == 0, result.output
+        assert result.output.count("Publish all 2 uploads?") == 1
+        assert len(published) == 2

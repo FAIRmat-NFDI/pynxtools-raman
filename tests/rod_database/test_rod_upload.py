@@ -58,6 +58,88 @@ def test_zip_upload_batch_honors_explicit_zip_path(tmp_path):
     assert zip_path.is_file()
 
 
+class TestBatchFiles:
+    def test_splits_into_groups_of_at_most_batch_size(self):
+        files = [Path(f"{i}.nxs") for i in range(5)]
+
+        batches = rod_upload.batch_files(files, batch_size=2)
+
+        assert batches == [files[0:2], files[2:4], files[4:5]]
+
+    def test_exact_multiple_produces_evenly_sized_batches(self):
+        files = [Path(f"{i}.nxs") for i in range(4)]
+
+        batches = rod_upload.batch_files(files, batch_size=2)
+
+        assert [len(batch) for batch in batches] == [2, 2]
+
+    def test_batch_size_larger_than_input_produces_one_batch(self):
+        files = [Path(f"{i}.nxs") for i in range(3)]
+
+        batches = rod_upload.batch_files(files, batch_size=10)
+
+        assert batches == [files]
+
+    def test_empty_input_produces_no_batches(self):
+        assert rod_upload.batch_files([], batch_size=5) == []
+
+
+class TestStageBatch:
+    def test_populates_batch_dir_and_zips_cleanly(self, tmp_path):
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        nxs_files = []
+        for name in ("1000679.nxs", "1000680.nxs", "1000681.nxs"):
+            path = source_dir / name
+            path.write_text(f"fake content for {name}")
+            nxs_files.append(path)
+        nomad_json_path = source_dir / "nomad.json"
+        nomad_json_path.write_text('{"comment": "..."}')
+
+        batch_dir = tmp_path / "batch_001"
+        # Only stage a subset (the first two) -- this is the whole point of
+        # batching: not every file in source_dir goes into every batch.
+        rod_upload.stage_batch(nxs_files[:2], nomad_json_path, batch_dir)
+
+        assert sorted(p.name for p in batch_dir.iterdir()) == [
+            "1000679.nxs",
+            "1000680.nxs",
+            "README.md",
+            "nomad.json",
+        ]
+        # The staged files are independent copies, not the batch's only
+        # reference to the originals.
+        assert (batch_dir / "1000679.nxs").read_text() == "fake content for 1000679.nxs"
+
+        # zip_upload_batch (unchanged, already used for the non-batched
+        # case) must be able to consume a staged batch directory as-is.
+        zip_path = rod_upload.zip_upload_batch(batch_dir)
+        with zipfile.ZipFile(zip_path) as zf:
+            assert sorted(zf.namelist()) == [
+                "1000679.nxs",
+                "1000680.nxs",
+                "README.md",
+                "nomad.json",
+            ]
+
+    def test_readme_lists_only_this_batch_files(self, tmp_path):
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        a = source_dir / "a.nxs"
+        a.write_text("a")
+        b = source_dir / "b.nxs"
+        b.write_text("b")
+        nomad_json_path = source_dir / "nomad.json"
+        nomad_json_path.write_text("{}")
+
+        batch_dir = tmp_path / "batch_001"
+        rod_upload.stage_batch([a], nomad_json_path, batch_dir)
+
+        readme = (batch_dir / "README.md").read_text(encoding="utf-8")
+        assert "a.nxs" in readme
+        assert "b.nxs" not in readme
+
+
 class FakeUploads:
     """Stand-in for nomad_utility_workflows.utils.uploads."""
 

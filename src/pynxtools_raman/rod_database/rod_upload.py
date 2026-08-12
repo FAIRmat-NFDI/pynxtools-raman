@@ -32,6 +32,8 @@ from pathlib import Path
 
 import click
 
+from pynxtools_raman.rod_database.nomad_upload_metadata import write_readme
+
 logger = logging.getLogger(__file__)
 
 
@@ -51,6 +53,41 @@ def zip_upload_batch(directory: Path, zip_path: Path | None = None) -> Path:
     base_name = str(zip_path.with_suffix(""))
     archive = shutil.make_archive(base_name, "zip", root_dir=directory)
     return Path(archive)
+
+
+def batch_files(files: list[Path], batch_size: int) -> list[list[Path]]:
+    """Split files into consecutive groups of at most batch_size.
+
+    Args:
+        files (list[Path]): Files to split into batches.
+        batch_size (int): Maximum number of files per batch.
+
+    Returns:
+        list[list[Path]]: The batches, in the same order as files.
+    """
+    return [files[i : i + batch_size] for i in range(0, len(files), batch_size)]
+
+
+def stage_batch(nxs_files: list[Path], nomad_json_path: Path, batch_dir: Path) -> Path:
+    """Populate batch_dir with copies of nxs_files and nomad_json_path,
+    plus a freshly-written README.md -- everything zip_upload_batch(batch_dir)
+    needs to produce one batch's upload.
+
+    Args:
+        nxs_files (list[Path]): The .nxs files to include in this batch.
+        nomad_json_path (Path): Path of the (shared, dataset-wide) nomad.json
+            to copy into this batch.
+        batch_dir (Path): Directory to populate. Created if missing.
+
+    Returns:
+        Path: batch_dir, populated and ready to zip.
+    """
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    for nxs_file in nxs_files:
+        shutil.copy2(nxs_file, batch_dir / nxs_file.name)
+    shutil.copy2(nomad_json_path, batch_dir / "nomad.json")
+    write_readme([nxs_file.name for nxs_file in nxs_files], batch_dir)
+    return batch_dir
 
 
 def _import_nomad_utility_workflows():

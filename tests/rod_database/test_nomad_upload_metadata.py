@@ -15,7 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Tests for the ROD batch-upload nomad.json metadata generator."""
+"""Tests for the ROD batch-upload nomad.json metadata and README.md
+generators.
+"""
 
 import json
 
@@ -23,6 +25,7 @@ from pynxtools_raman.parsers.rod import ROD_CITATION_DOI, ROD_LICENSE_TEXT
 from pynxtools_raman.rod_database.nomad_upload_metadata import (
     ROD_CITING_WIKI_URL,
     write_nomad_json,
+    write_readme,
 )
 
 
@@ -61,3 +64,33 @@ def test_references_include_doi_wiki_and_license_urls(tmp_path):
     assert (
         "https://creativecommons.org/publicdomain/zero/1.0/" in (metadata["references"])
     )
+
+
+def test_write_readme_creates_file_with_expected_name(tmp_path):
+    output_path = write_readme(["1000679.nxs"], tmp_path)
+
+    assert output_path == tmp_path / "README.md"
+    assert output_path.is_file()
+
+
+def test_write_readme_lists_given_filenames_sorted(tmp_path):
+    output_path = write_readme(["1000680.nxs", "1000679.nxs"], tmp_path)
+    content = output_path.read_text(encoding="utf-8")
+
+    assert content.index("1000679.nxs") < content.index("1000680.nxs")
+
+
+def test_write_readme_cites_rod_and_its_license(tmp_path):
+    output_path = write_readme(["1000679.nxs"], tmp_path)
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "Raman Open Database" in content
+    assert ROD_LICENSE_TEXT in content
+    assert ROD_CITATION_DOI in content
+
+
+def test_write_readme_mentions_entry_count(tmp_path):
+    output_path = write_readme(["1000679.nxs", "1000680.nxs"], tmp_path)
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "2 Raman spectra" in content

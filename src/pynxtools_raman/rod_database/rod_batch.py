@@ -26,6 +26,7 @@ so it has its own options.
 """
 
 import logging
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
@@ -34,11 +35,16 @@ from pynxtools.dataconverter.convert import convert
 
 from pynxtools_raman.parsers.rod import RodParser
 from pynxtools_raman.rod_database import DEFAULT_ROD_BATCH_DIR
-from pynxtools_raman.rod_database.nomad_upload_metadata import write_nomad_json
+from pynxtools_raman.rod_database.nomad_upload_metadata import (
+    write_nomad_json,
+    write_readme,
+)
 from pynxtools_raman.rod_database.rod_get_file import save_rod_file_from_ROD_via_API
 from pynxtools_raman.rod_database.rod_upload import (
+    batch_files,
     publish_batch_upload,
     set_upload_name,
+    stage_batch,
     upload_batch,
     wait_for_processing,
     zip_upload_batch,
@@ -303,53 +309,11 @@ def build_rod_upload_batch(
     )
 
 
-@click.command("upload-rod-batch")
-@click.option(
-    "--output-dir",
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
-    default=DEFAULT_ROD_BATCH_DIR,
-    show_default=True,
-    help="Directory containing the batch to upload, as built by build-upload-batch.",
-)
-@click.option(
-    "--upload-name",
-    default=None,
-    help="Name to give the NOMAD upload.",
-)
-@click.option(
-    "--nomad-url",
-    default=None,
-    help="NOMAD API URL. Defaults to the central NOMAD deployment.",
-)
-@click.option(
-    "--publish",
-    is_flag=True,
-    help=(
-        "Publish the upload after successful processing. Off by default: "
-        "the upload lands in staging for manual review."
-    ),
-)
-@click.option(
-    "--yes",
-    "-y",
-    is_flag=True,
-    help="Do not ask for confirmation before publishing.",
-)
-def upload_rod_batch(
-    output_dir: Path,
-    upload_name: str | None,
-    nomad_url: str | None,
-    publish: bool,
-    yes: bool,
-):
-    """Zip, upload, and optionally publish a ROD batch to NOMAD.
-
-    Requires NOMAD_USERNAME and NOMAD_PASSWORD to be set in the
-    environment.
+def _upload_and_wait(zip_path: Path, nomad_url: str | None, upload_name: str | None):
+    """Upload zip_path, wait for processing, and set upload_name if given.
+    Returns (upload_id, upload) for the caller to report on and decide
+    whether to publish.
     """
-    zip_path = zip_upload_batch(output_dir)
-    click.echo(f"Zipped {output_dir} to {zip_path}.")
-
     upload_id = upload_batch(zip_path, url=nomad_url)
     click.echo(f"Created upload {upload_id}. Waiting for processing...")
 
@@ -364,19 +328,136 @@ def upload_rod_batch(
         set_upload_name(upload_id, upload_name, url=nomad_url)
         click.echo(f"Set upload name to {upload_name!r}.")
 
+    return upload_id, upload
+
+
+def _maybe_publish(results: list, nomad_url: str | None, publish: bool, yes: bool):
+    """Publish every successfully-processed upload in results (a list of
+    (upload_id, upload) pairs from _upload_and_wait), after a single
+    confirmation covering all of them -- not one confirmation per upload.
+    Does nothing if publish is False.
+    """
     if not publish:
-        click.echo(f"Upload {upload_id} is in staging; review it in NOMAD.")
+        if len(results) == 1:
+            click.echo(f"Upload {results[0][0]} is in staging; review it in NOMAD.")
+        else:
+            click.echo(f"{len(results)} uploads are in staging; review them in NOMAD.")
         return
 
-    if upload.process_status == "FAILURE":
-        click.echo("Not publishing: processing failed.")
+    publishable = [
+        (upload_id, upload)
+        for upload_id, upload in results
+        if upload.process_status != "FAILURE"
+    ]
+    skipped = len(results) - len(publishable)
+    if skipped:
+        click.echo(f"Not publishing {skipped} upload(s) whose processing failed.")
+    if not publishable:
         return
 
-    if not yes and not click.confirm(
-        f"Publish upload {upload_id}? This makes it public."
-    ):
+    prompt = (
+        f"Publish upload {publishable[0][0]}? This makes it public."
+        if len(publishable) == 1
+        else f"Publish all {len(publishable)} uploads? This makes them public."
+    )
+    if not yes and not click.confirm(prompt):
         click.echo("Not published.")
         return
 
-    publish_batch_upload(upload_id, url=nomad_url)
-    click.echo(f"Published upload {upload_id}.")
+    for upload_id, _ in publishable:
+        publish_batch_upload(upload_id, url=nomad_url)
+        click.echo(f"Published upload {upload_id}.")
+
+
+@click.command("upload-rod-batch")
+@click.option(
+    "--output-dir",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=DEFAULT_ROD_BATCH_DIR,
+    show_default=True,
+    help="Directory containing the batch to upload, as built by build-upload-batch.",
+)
+@click.option(
+    "--upload-name",
+    default=None,
+    help="Name to give the NOMAD upload(s).",
+)
+@click.option(
+    "--nomad-url",
+    default=None,
+    help="NOMAD API URL. Defaults to the central NOMAD deployment.",
+)
+@click.option(
+    "--batch-size",
+    type=int,
+    default=None,
+    help=(
+        "Upload at most this many entries per NOMAD upload, creating "
+        "multiple uploads instead of one. Default: upload everything in "
+        "--output-dir as a single upload."
+    ),
+)
+@click.option(
+    "--publish",
+    is_flag=True,
+    help=(
+        "Publish the upload(s) after successful processing. Off by "
+        "default: uploads land in staging for manual review."
+    ),
+)
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Do not ask for confirmation before publishing.",
+)
+def upload_rod_batch(  # noqa: PLR0917
+    output_dir: Path,
+    upload_name: str | None,
+    nomad_url: str | None,
+    batch_size: int | None,
+    publish: bool,
+    yes: bool,
+):
+    """Zip, upload, and optionally publish a ROD batch to NOMAD.
+
+    Requires NOMAD_USERNAME and NOMAD_PASSWORD to be set in the
+    environment.
+    """
+    nxs_files = sorted(output_dir.glob("*.nxs"))
+    if not nxs_files:
+        raise click.UsageError(f"No .nxs files found in {output_dir}.")
+
+    if not batch_size:
+        write_readme([nxs_file.name for nxs_file in nxs_files], output_dir)
+        zip_path = zip_upload_batch(output_dir)
+        click.echo(f"Zipped {output_dir} to {zip_path}.")
+
+        result = _upload_and_wait(zip_path, nomad_url, upload_name)
+        _maybe_publish([result], nomad_url, publish, yes)
+        return
+
+    nomad_json_path = output_dir / "nomad.json"
+    if not nomad_json_path.is_file():
+        raise click.UsageError(
+            f"{nomad_json_path} not found -- run build-upload-batch first."
+        )
+
+    batches = batch_files(nxs_files, batch_size)
+    n = len(batches)
+    results = []
+    for i, batch in enumerate(batches, start=1):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            batch_dir = stage_batch(
+                batch, nomad_json_path, Path(tmp_dir) / f"batch_{i:03d}"
+            )
+            zip_path = zip_upload_batch(
+                batch_dir,
+                zip_path=output_dir.parent / f"{output_dir.name}_batch{i:03d}.zip",
+            )
+        click.echo(f"[{i}/{n}] Zipped batch ({len(batch)} entries) to {zip_path}.")
+
+        batch_upload_name = f"{upload_name} (batch {i}/{n})" if upload_name else None
+        results.append(_upload_and_wait(zip_path, nomad_url, batch_upload_name))
+
+    _maybe_publish(results, nomad_url, publish, yes)

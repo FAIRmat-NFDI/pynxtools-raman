@@ -48,6 +48,7 @@ docs = [
     "mkdocs-click"
 ]
 nomad = ["nomad-lab[infrastructure]>=1.4.1"]
+upload = ["nomad-utility-workflows==0.3.2"]
 
 [project.urls]
 "Homepage" = "https://github.com/FAIRmat-NFDI/pynxtools-raman"

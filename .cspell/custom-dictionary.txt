@@ -58,11 +58,13 @@ nfdi
 nmlaser
 nxdls
 orcid
+pipefail
 polfilter
 pynx
 pynxtools
 raman
 ramanapp
+runbook
 unfindable
 wavenumber
 wavenumbers

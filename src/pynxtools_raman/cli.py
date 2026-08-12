@@ -22,11 +22,14 @@ entry point, mirroring the top-level ``pynx`` dispatcher in pynxtools::
 
     pynx-raman download [ROD_IDS...]            # download a batch of .rod files
     pynx-raman build-upload-batch [ROD_IDS...]  # download, convert, and stamp a NOMAD upload batch
+    pynx-raman upload                           # zip, upload, and optionally publish a batch to NOMAD
     pynx-raman analyze-keys [ROD_DIR]           # count CIF key frequency across a directory
 
 ``download`` and ``build-upload-batch`` share the same options
-(--ids-file, --all, --output-dir, --yes/-y); ``analyze-keys`` defaults to
-the same directory (rod_batch) and writes its report there too.
+(--ids-file, --all, --output-dir, --yes/-y); ``analyze-keys`` and
+``upload`` default to the same directory (rod_batch). ``upload`` requires
+the ``pynxtools-raman[upload]`` extra and NOMAD_USERNAME/NOMAD_PASSWORD
+in the environment.
 """
 
 import click
@@ -34,6 +37,7 @@ import click
 from pynxtools_raman.rod_database.rod_batch import (
     build_rod_upload_batch,
     download_rod_files_cli,
+    upload_rod_batch,
 )
 from pynxtools_raman.rod_database.rod_stats import analyze_rod_keys
 
@@ -48,4 +52,5 @@ def pynx_raman():
 
 pynx_raman.add_command(download_rod_files_cli, name="download")
 pynx_raman.add_command(build_rod_upload_batch, name="build-upload-batch")
+pynx_raman.add_command(upload_rod_batch, name="upload")
 pynx_raman.add_command(analyze_rod_keys, name="analyze-keys")

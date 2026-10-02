@@ -51,7 +51,7 @@
   "/ENTRY[entry]/@default": "data",
   "/ENTRY[entry]/DATA[data]/@signal": "y_values",
   "/ENTRY[entry]/DATA[data]/DATA[y_values]": "@data:_raman_spectrum.intensity",
-  "/ENTRY[entry]/DATA[data]/DATA[y_values]/@units": "arb. units",
+  "/ENTRY[entry]/DATA[data]/DATA[y_values]/@units": "",
   "/ENTRY[entry]/DATA[data]/DATA[y_values]/@long_name": "Intensity [arb.u.]",
   "/ENTRY[entry]/DATA[data]/@axes": "x_values_raman",
   "/ENTRY[entry]/DATA[data]/AXISNAME[x_values_raman]/@long_name": "Raman Shift [1/cm]",

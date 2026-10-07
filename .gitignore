@@ -200,6 +200,8 @@ cython_debug/
 # Default rod download directory
 rod_batch/
 !tests/data/witec/*.txt
+# Bundled ROD ID lists, shipped as package data
+!src/pynxtools_raman/rod_database/data/*.txt
 !examples/witec/txt/*.txt
 !tests/data/rod/*.txt
 build/

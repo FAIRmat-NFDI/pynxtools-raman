@@ -694,3 +694,9 @@ class TestUploadRodBatchCli:
         assert result.exit_code == 0, result.output
         assert result.output.count("Publish all 2 uploads?") == 1
         assert len(published) == 2
+
+
+def test_bundled_rod_id_list_is_package_data():
+    """--all reads the ROD ID list shipped with the package."""
+    rod_ids = rod_batch.resolve_rod_ids((), None, all_known=True)
+    assert len(rod_ids) > 1000

@@ -77,8 +77,10 @@ class RamanReader(MultiFormatReader):
 
     def _set_parser_data(self, parser) -> None:
         """Populate reader state from a parsed file."""
-        reader_dir = Path(__file__).parent
-        self.config_file = reader_dir.joinpath("config", parser.config_file)  # pylint: disable=invalid-type-comment
+        # Use the built-in config only if the user did not give one.
+        if self.config_file is None:
+            reader_dir = Path(__file__).parent
+            self.config_file = reader_dir.joinpath("config", parser.config_file)
         self._active_parser = parser
         self._unused_attrs_group_name = parser.unused_attrs_group_name
         self.attrs = parser.attrs
@@ -227,7 +229,8 @@ class RamanReader(MultiFormatReader):
         objects: tuple[Any] = None,
         **kwargs,
     ) -> dict:
-        template = super().read(template, file_paths, objects, suppress_warning=True)
+        kwargs.setdefault("suppress_warning", True)
+        template = super().read(template, file_paths, objects, **kwargs)
         # set default data
 
         if self.missing_meta_data:

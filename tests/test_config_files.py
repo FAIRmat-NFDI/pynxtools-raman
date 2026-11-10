@@ -15,14 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""A config file given by the user must not be replaced by the built-in one."""
+"""Tests for the config files: the shipped configs are valid JSON, and a
+config file given by the user is not replaced by the built-in one."""
 
 import json
 from pathlib import Path
 
 import pytest
 
+import pynxtools_raman
 from pynxtools_raman.reader import RamanReader
+
+CONFIG_DIR = Path(pynxtools_raman.__file__).parent / "config"
+CONFIG_FILES = sorted(CONFIG_DIR.glob("*.json"))
 
 DATA = Path(__file__).parent / "data"
 DATA_FILES = {
@@ -60,3 +65,13 @@ def test_builtin_config_without_user_config(data_files):
     reader.read(file_paths=data_files)
 
     assert Path(reader.config_file).parent.name == "config"
+
+
+def test_config_files_are_found():
+    assert CONFIG_FILES
+
+
+@pytest.mark.parametrize("config_file", CONFIG_FILES, ids=lambda path: path.name)
+def test_config_file_is_valid_json(config_file):
+    with open(config_file, encoding="utf-8") as file:
+        json.load(file)

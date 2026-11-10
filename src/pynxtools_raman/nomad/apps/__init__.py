@@ -34,7 +34,7 @@ except ImportError as exc:
         "Could not import nomad package. Please install the package 'nomad-lab'."
     ) from exc
 
-schema = "pynxtools.nomad.schema.Root"
+schema = "pynxtools.nomad.metainfo.applications.Raman"
 
 raman_app = AppEntryPoint(
     name="Raman App",
@@ -56,44 +56,33 @@ raman_app = AppEntryPoint(
         # package.
         search_quantities=SearchQuantities(
             include=[f"*#{schema}"],
-            # include=[f"data.Raman.*#{schema}"],
         ),
         # Controls which columns are shown in the results table
         columns=[
-            Column(quantity="entry_id", selected=True),
+            Column(title="Entry ID", search_quantity="entry_id", selected=True),
             Column(
                 title="Material Name",
-                quantity=f"data.ENTRY[*].SAMPLE[*].name__field#{schema}",
-                selected=True,
-            ),
-            Column(
-                title="Space Group Number",
-                quantity=f"data.ENTRY[*].SAMPLE[*].space_group__field#{schema}#str",
-                selected=True,
-            ),
-            # Column(
-            #    title="Temperature",
-            #    quantity=f"data.ENTRY[*].SAMPLE[*].ENVIRONMENT[1].SENSOR[*].value__field#{schema}",
-            #    selected=True,
-            # ),
-            Column(
-                title="Unit Cell Volume",
-                quantity=f"data.ENTRY[*].SAMPLE[*].unit_cell_volume__field#{schema}",
+                search_quantity=f"data.sample[*].name#{schema}",
                 selected=True,
             ),
             Column(
                 title="Long Name",
-                quantity=f"data.ENTRY[*].title__field#{schema}",
+                search_quantity=f"data.title#{schema}",
                 selected=True,
             ),
         ],
+        # "Space Group Number" (data.sample.space_group) and "Unit Cell
+        # Volume" (data.sample.unit_cell_volume) are declared with
+        # shape=["*"] (real arrays). NOMAD's dynamic search-quantity
+        # registration unconditionally skips any array-shaped quantity
+        # (elasticsearch_extension.create_dynamic_quantity_annotation), so
+        # they cannot be used as search_quantity/quantity targets.
         # Dictionary of search filters that are always enabled for queries made
         # within this app. This is especially important to narrow down the
         # results to the wanted subset. Any available search filter can be
         # targeted here. This example makes sure that only entries that use
-        # MySchema are included.
-        # filters_locked={"section_defs.definition_qualified_name": [schema]},
-        filters_locked={f"data.ENTRY.definition__field#{schema}": ["NXraman"]},
+        # this Raman application class are included.
+        filters_locked={"section_defs.definition_qualified_name": [schema]},
         # Controls the menu shown on the left
         menu=Menu(
             title="Material",
@@ -130,21 +119,14 @@ raman_app = AppEntryPoint(
                         ),
                     ],
                 ),
-                Menu(
-                    title="Space Group Number",
-                    items=[
-                        MenuItemTerms(
-                            quantity=f"data.ENTRY.SAMPLE.space_group__field#{schema}#str",
-                            width=10,
-                            options=10,
-                        ),
-                    ],
-                ),
+                # "Space Group Number" (data.sample.space_group) is
+                # array-shaped (shape=["*"]) and unsearchable, see the
+                # comment near the columns above.
                 Menu(
                     title="Raman Spectrometer Model",
                     items=[
                         MenuItemTerms(
-                            quantity=f"data.ENTRY.INSTRUMENT.device_information.model__field#{schema}#str",
+                            quantity=f"data.instrument.device_information.model#{schema}#str",
                             width=10,
                             options=5,
                         ),
@@ -154,7 +136,7 @@ raman_app = AppEntryPoint(
                     title="Scattering Configuration",
                     items=[
                         MenuItemTerms(
-                            quantity=f"data.ENTRY.INSTRUMENT.scattering_configuration__field#{schema}#str",
+                            quantity=f"data.instrument.scattering_configuration#{schema}#str",
                             width=10,
                             options=7,
                         ),
@@ -166,13 +148,13 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Name",
-                            search_quantity=f"data.ENTRY.INSTRUMENT.name__field#{schema}",
+                            search_quantity=f"data.instrument.name#{schema}",
                             width=12,
                             options=12,
                         ),
                         MenuItemTerms(
                             title="Short Name",
-                            search_quantity=f"data.ENTRY.INSTRUMENT.name___short_name#{schema}",
+                            search_quantity=f"data.instrument.name__short_name#{schema}",
                             width=12,
                             options=12,
                         ),
@@ -184,16 +166,15 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Name",
-                            search_quantity=f"data.ENTRY.SAMPLE.name__field#{schema}",
+                            search_quantity=f"data.sample.name#{schema}",
                             width=12,
                             options=12,
                         ),
-                        MenuItemTerms(
-                            title="Sample ID",
-                            search_quantity=f"data.ENTRY.SAMPLE.identifierNAME__field#{schema}",
-                            width=12,
-                            options=12,
-                        ),
+                        # No "Sample ID" item: NXraman's Sample is the
+                        # generic base_classes.Sample, which has no
+                        # concretely-named identifier field (only the
+                        # variadic identifierNAME, unlike NXmpes's Sample
+                        # which redefines a concrete "identifier").
                     ],
                 ),
                 Menu(
@@ -202,19 +183,19 @@ raman_app = AppEntryPoint(
                     items=[
                         MenuItemTerms(
                             title="Entry Author",
-                            search_quantity=f"data.ENTRY.USER.name__field#{schema}",
+                            search_quantity=f"data.user.name#{schema}",
                             width=12,
                             options=5,
                         ),
                         MenuItemTerms(
                             title="Upload Author",
-                            search_quantity=f"authors.name",
+                            search_quantity="authors.name",
                             width=12,
                             options=5,
                         ),
                         MenuItemTerms(
                             title="Affiliation",
-                            search_quantity=f"data.ENTRY.USER.affiliation__field#{schema}",
+                            search_quantity=f"data.user.affiliation#{schema}",
                             width=12,
                             options=5,
                         ),
@@ -222,7 +203,7 @@ raman_app = AppEntryPoint(
                 ),
                 MenuItemHistogram(
                     title="Start Time",
-                    x=f"data.ENTRY.start_time__field#{schema}",
+                    x=f"data.start_time#{schema}",
                     autorange=True,
                 ),
                 MenuItemHistogram(
@@ -241,10 +222,10 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "log",
-                    "quantity": f"data.ENTRY.INSTRUMENT.beam_incident.wavelength__field#{schema}#float",
+                    "quantity": f"data.instrument.beam_TYPE.incident_wavelength#{schema}#float",
                     "title": "Incident Wavelength [nm]",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 5, "w": 8, "y": 0, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 0, "x": 0}
                     },
                 },
                 {
@@ -253,10 +234,10 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "log",
-                    "quantity": f"data.ENTRY.INSTRUMENT.beam_incident.average_power__field#{schema}#float",
+                    "quantity": f"data.instrument.beam_TYPE.average_power#{schema}#float",
                     "title": "Laser Power [mW]",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 4, "w": 8, "y": 5, "x": 0}
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 3, "x": 0}
                     },
                 },
                 {
@@ -265,7 +246,7 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "log",
-                    "quantity": f"data.ENTRY.INSTRUMENT.LENS_OPT.magnification__field#{schema}#float",
+                    "quantity": f"data.instrument.optical_lens.magnification#{schema}#float",
                     "title": "Magnification",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 3, "w": 6, "y": 0, "x": 8}
@@ -277,10 +258,27 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "log",
-                    "quantity": f"data.ENTRY.INSTRUMENT.LENS_OPT.numerical_aperture__field#{schema}#float",
+                    "quantity": f"data.instrument.optical_lens.numerical_aperture#{schema}#float",
                     "title": "Numerical Aperture",
                     "layout": {
                         "lg": {"minH": 3, "minW": 3, "h": 3, "w": 6, "y": 3, "x": 8}
+                    },
+                },
+                # "extent" (beam diameter) is declared with shape=["*", 2] (a
+                # real array). NOMAD's dynamic search-quantity registration
+                # unconditionally skips any array-shaped quantity
+                # (elasticsearch_extension.create_dynamic_quantity_annotation),
+                # so it cannot be used as a search_quantity/quantity target.
+                {
+                    "type": "histogram",
+                    "show_input": False,
+                    "autorange": True,
+                    "nbins": 30,
+                    "scale": "log",
+                    "quantity": f"data.instrument.beam_incident.extent#{schema}#float",
+                    "title": "Beam Diameter [µm]",
+                    "layout": {
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 6, "y": 6, "x": 8}
                     },
                 },
                 {
@@ -289,10 +287,10 @@ raman_app = AppEntryPoint(
                     "autorange": True,
                     "nbins": 30,
                     "scale": "log",
-                    "quantity": f"data.ENTRY.INSTRUMENT.beam_incident.extent__field#{schema}#float",
-                    "title": "Beam diameter [µm]",
+                    "quantity": f"data.sample.temperature_env.sensor.value#{schema}#float",
+                    "title": "Sample Temperature [K]",
                     "layout": {
-                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 6, "y": 6, "x": 8}
+                        "lg": {"minH": 3, "minW": 3, "h": 3, "w": 8, "y": 6, "x": 0}
                     },
                 },
             ]

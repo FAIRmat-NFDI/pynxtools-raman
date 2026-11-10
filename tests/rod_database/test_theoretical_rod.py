@@ -23,7 +23,7 @@ import pytest
 
 from pynxtools_raman.reader import RamanReader
 
-ROD_FIXTURE = Path(__file__).parent / "data" / "rod" / "rod_file_1000679.rod"
+ROD_FIXTURE = Path(__file__).parents[1] / "data" / "rod" / "rod_file_1000679.rod"
 
 
 @pytest.fixture

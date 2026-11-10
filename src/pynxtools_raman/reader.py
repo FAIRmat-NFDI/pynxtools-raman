@@ -102,8 +102,6 @@ class RamanReader(MultiFormatReader):
             logger.warning(
                 "Theoretical Raman data .rod file found. File parsing aborted."
             )
-            # Prevent file parsing from setting an invalid config file name.
-            self.config_file = Path()
             return {}
 
         self._set_parser_data(parser)

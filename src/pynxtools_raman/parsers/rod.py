@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 import copy
-import datetime
 import logging
 import re
 from pathlib import Path
@@ -293,20 +292,9 @@ class RodParser(_RamanParser):
         if environment_name_str is not None:
             self.attrs[key_to_make_value_lower_case] = environment_name_str.lower()
 
-        # transform the string into a datetime object
-        time_key = "_raman_measurement.datetime_initiated"
-        date_time_str = self.attrs.get(time_key)
-        if date_time_str is not None:
-            date_time_obj = datetime.datetime.strptime(date_time_str, "%Y-%m-%d")
-            # assume UTC for .rod data, as this is not specified in detail
-            tzinfo = datetime.timezone.utc
-            if isinstance(date_time_obj, datetime.datetime):
-                if tzinfo is not None:
-                    # Apply the specified timezone to the datetime object
-                    date_time_obj = date_time_obj.replace(tzinfo=tzinfo)
-
-                # assign the dictionary the corrected date format
-                self.attrs[time_key] = date_time_obj.isoformat()
+        # The ROD date (_raman_measurement.datetime_initiated) is a plain date
+        # like 2011-09-07, without a time or a time zone. It is kept as it is
+        # instead of inventing midnight UTC; see post_process for the warning.
 
         # remove capitalization
         objective_type_key = "_raman_measurement_device.optics_type"
@@ -319,6 +307,13 @@ class RodParser(_RamanParser):
                 self.attrs[objective_type_key] = "other"
 
     def post_process(self, eln_data: dict[str, Any]) -> None:
+        date = self.attrs.get("_raman_measurement.datetime_initiated")
+        if date is not None and not eln_data.get("/ENTRY[entry]/start_time"):
+            logger.warning(
+                f"The ROD date {date!r} has no time or time zone, so start_time "
+                "is written as a date only. Give start_time in an ELN file to "
+                "set the full time."
+            )
         wavelength_nm = float(
             self.attrs.get("_raman_measurement_device.excitation_laser_wavelength")
         )

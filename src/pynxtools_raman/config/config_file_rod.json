@@ -47,7 +47,7 @@
   "/ENTRY[entry]/experiment_type": "Raman spectroscopy",
   "/ENTRY[entry]/raman_experiment_type": "other",
   "/ENTRY[entry]/title": "['@attrs:_cod_original_formula_sum','@attrs:_chemical_formula_sum','@attrs:_chemical_formula_structural','@attrs:_chemical_name_mineral','@attrs:_chemical_name_systematic']",
-  "/ENTRY[entry]/start_time": "@attrs:_raman_measurement.datetime_initiated",
+  "/ENTRY[entry]/start_time": "['@eln:/ENTRY[entry]/start_time', '@attrs:_raman_measurement.datetime_initiated']",
   "/ENTRY[entry]/@default": "data",
   "/ENTRY[entry]/DATA[data]/@signal": "y_values",
   "/ENTRY[entry]/DATA[data]/DATA[y_values]": "@data:_raman_spectrum.intensity",

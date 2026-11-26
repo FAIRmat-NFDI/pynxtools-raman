@@ -21,7 +21,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, ClassVar
 
-from pynxtools_raman.parsers.versioning import (
+from pynxtools.dataconverter.readers.parsers.versioning import (
     VersionRange,
     VersionTuple,
     is_version_supported,

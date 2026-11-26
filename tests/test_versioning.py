@@ -15,12 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""The version helpers come from pynxtools core."""
+"""The old versioning module is deprecated and gives the core helpers."""
+
+import importlib
 
 import pytest
 from pynxtools.dataconverter.readers.parsers import versioning as core_versioning
-
-from pynxtools_raman.parsers import versioning
 
 HELPERS = [
     "VersionRange",
@@ -33,7 +33,11 @@ HELPERS = [
 ]
 
 
-@pytest.mark.parametrize("name", HELPERS)
-def test_version_helpers_are_the_ones_from_core(name):
-    """Each helper is the core object, not a copy."""
-    assert getattr(versioning, name) is getattr(core_versioning, name)
+def test_old_versioning_module_warns_and_gives_the_core_helpers():
+    """The old module still works, but tells users to import from core."""
+    with pytest.warns(DeprecationWarning, match="is deprecated"):
+        old_module = importlib.reload(
+            importlib.import_module("pynxtools_raman.parsers.versioning")
+        )
+    for name in HELPERS:
+        assert getattr(old_module, name) is getattr(core_versioning, name)

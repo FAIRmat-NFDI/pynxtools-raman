@@ -50,8 +50,9 @@ class _RamanParser(ABC):
     """
 
     supported_file_extensions: ClassVar[tuple[str, ...]] = ()
-    # No raman format has a known, observed version story today - see
-    # parsers/versioning.py's module docstring for why this is here anyway.
+    # No raman format has versions yet. The attribute exists so that a
+    # future parser can declare supported versions without changing the
+    # base class.
     supported_versions: ClassVar[tuple[VersionRange, ...]] = ()
     supported_vendor: ClassVar[str | None] = None
     config_file: ClassVar[str] = ""  # filename under config/

@@ -204,6 +204,8 @@ rod_batch/
 !src/pynxtools_raman/rod_database/data/*.txt
 !examples/witec/txt/*.txt
 !tests/data/rod/*.txt
+
+!examples/beam_path/raman_data_for_nexus_file/*.txt
 build/
 +.python-version
 +!.cspell/custom-dictionary.txt

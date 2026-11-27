@@ -15,51 +15,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Utilities for declaring and checking parser format-version support.
+"""Deprecated: use ``pynxtools.dataconverter.readers.parsers.versioning``.
 
-None of the supported formats has a known, observed version story
-today, so no parser currently overrides ``RamanParser.detect_version`` or
-sets a non-empty ``supported_versions``. This module exists so that when a
-real version-limited format variant does show up, version support can be
-added to a parser without reshaping the base class.
+This module only re-exports the version helpers from pynxtools core so that
+old imports keep working. It will be removed in a future release.
 """
 
-from collections.abc import Iterable
-from typing import TypeAlias
+import warnings
 
-VersionTuple: TypeAlias = tuple[int | str, ...]
-VersionRange: TypeAlias = tuple[VersionTuple, VersionTuple | None]
+from pynxtools.dataconverter.readers.parsers.versioning import (
+    VersionRange,
+    VersionTuple,
+    format_version,
+    format_version_ranges,
+    is_version_supported,
+    normalize_version,
+    version_ranges_overlap,
+)
 
+warnings.warn(
+    "pynxtools_raman.parsers.versioning is deprecated and will be removed in a "
+    "future release. Import from pynxtools.dataconverter.readers.parsers.versioning "
+    "instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-def _format_version(version: VersionTuple) -> str:
-    return ".".join(str(x) for x in version)
-
-
-def is_version_supported(
-    version: VersionTuple | None,
-    supported_versions: Iterable[VersionRange],
-) -> bool:
-    """
-    Determine whether a version tuple falls within the supported ranges.
-
-    ``supported_versions`` is an iterable of half-open intervals
-    ``(lower_inclusive, upper_exclusive_or_None)``. An empty iterable means
-    no version constraint: all files are accepted, including those without
-    a detected version. A non-empty iterable implicitly requires a version;
-    ``None`` is rejected because it cannot fall within any declared range.
-    """
-    ranges = tuple(supported_versions)
-    if not ranges:
-        return True
-
-    if version is None:
-        return False
-
-    for lower, upper in ranges:
-        if upper is None:
-            if version >= lower:
-                return True
-        elif lower <= version < upper:
-            return True
-
-    return False
+__all__ = [
+    "VersionRange",
+    "VersionTuple",
+    "format_version",
+    "format_version_ranges",
+    "is_version_supported",
+    "normalize_version",
+    "version_ranges_overlap",
+]
